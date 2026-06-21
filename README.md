@@ -1,5 +1,5 @@
 # abucus
-![ptyxis]([http://url/to/img.png](https://github.com/knuxyl/abucus/blob/main/abucus.png?raw=true))
+![ptyxis](https://github.com/knuxyl/abucus/blob/main/abucus.png?raw=true)
 
 Shell script for managing, building, and running git projects
 
