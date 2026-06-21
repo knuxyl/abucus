@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set_variables() {
 	OS=$(source /etc/os-release; echo "${ID,,}")
 	CPU_ARCH="$(uname -m)"
