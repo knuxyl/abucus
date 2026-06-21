@@ -32,11 +32,12 @@ set_variables() {
    _ \    __ \   |   |  |      |   | \___ \ 
   ___ \   |   |  |   |  |      |   |       |
 _/    _\ ____/  \___/  \____| \___/  _____/ 
-${W}${ABUCUS_SCRIPT}${N}
+${ABUCUS_SCRIPT}
+${W}Abucus Version:${N} ${E}shasum${N} [${G}${ABUCUS_VERSION}${N}]
 ------------------------------------------------------------"
 }
 clean_project="	if [[ -d \"\${BUILD_DIR}\" ]]; then
-		remove_directory \"\${BUILD_DIR}\"
+		remove \"\${BUILD_DIR}\"
 	fi
 	make_directory \"\${BUILD_DIR}\""
 configure_project="	cmake -S \"\${SRC_DIR}\" -B \"\${BUILD_DIR}\" -G Ninja -L -DCMAKE_BUILD_TYPE=\"\${BUILD_TYPE}\" -DCMAKE_INSTALL_PREFIX=\"\${INSTALL_DIR}\"
@@ -89,7 +90,10 @@ project_dependencies="	abucus_deps=\"\"
 		\"\${ADMIN[@]}\" zypper install \${deps}
 	fi"
 setup_project() {
-	make_directory "${PROJECT_DIR}"
+	directories=("${PROJECT_DIR}/home.${PROJECT_NAME}" "${PROJECT_DIR}/build.${PROJECT_NAME}" "${PROJECT_DIR}/files.${PROJECT_NAME}" "${PROJECT_DIR}/install.${PROJECT_NAME}/bin" "${PROJECT_DIR}/install.${PROJECT_NAME}/include" "${PROJECT_DIR}/install.${PROJECT_NAME}/lib" "${PROJECT_DIR}/install.${PROJECT_NAME}/lib64" "${PROJECT_DIR}/archive.${PROJECT_NAME}")
+	for i in "${directories[@]}"; do
+		make_directory "${i}"
+	done
 	if [[ ! -f "${PROJECT_SCRIPT}" ]]; then
 		printf '%s' "#!/bin/bash
 # Abucus ${ABUCUS_VERSION}
@@ -118,7 +122,7 @@ clone_project() {
 		git clone --recursive --branch \"\${BRANCH}\" \"\${PROJECT_URL}\" \"\${SRC_DIR}\"
 		if [[ \"\${?}\" != 0 ]]; then
 			say \"\${R}Failed to clone\${N} [ \${G}\${PROJECT_URL}\${N} ]\"
-			remove_directory \"\${SRC_DIR}\"
+			remove \"\${SRC_DIR}\"
 			exit 1
 		fi
 	fi
@@ -152,35 +156,42 @@ dependencies() {
 ${dependency_function:-${project_dependencies}}	
 }
 colors() {
-	G=\"\$(tput setaf 2)\"
+	L=\"\$(tput setaf 0)\"
 	R=\"\$(tput setaf 1)\"
+	G=\"\$(tput setaf 2)\"
 	Y=\"\$(tput setaf 3)\"
 	B=\"\$(tput setaf 4)\"
 	P=\"\$(tput setaf 5)\"
+	E=\"\$(tput setaf 6)\"
 	W=\"\$(tput bold)\$(tput setaf 7)\"
+	D=\"\$(tput setaf 8)\"
 	N=\"\$(tput sgr0)\"
 }
-remove_directory() {
-	local prompt=\"\$(say \"\${W}Deleting directory\${N} [ \${R}\${1}\${N} ] \${W}Continue?\${N} [ \${G}Y/n\${N} ]: \")\"
+remove() {
+	local prompt=\"\$(say \"\${W}Deleting\${N} [\${R}\${1}\${N}] Continue? [\${G}Y/n\${N}]: \")\"
 	if [[ -w \"\$(dirname \"\${1}\")\" ]]; then
-		read -p \"\${prompt}\" p
-		if [[ \"\${p}\" != [nN] ]]; then
+		if [[ ! \"\${2}\" ]]; then
+			read -p \"\${prompt}\" p
+		fi
+		if [[ \"\${p}\" != [nN] ]] || [[ \"\${2}\" ]]; then
 			rm -Rf \"\${1}\"
 		else
-			say \"\${W}Skipping deletion of\${N} [ \${G}\${1}\${N} ]\"
+			say \"\${W}Skipping deletion of\${N} [\${G}\${1}\${N}]\"
 		fi
 	else
-		read -p \"\${prompt}\" p
-		if [[ \"\${p}\" != [nN] ]]; then
+		if [[ ! \"\${2}\" ]]; then
+			read -p \"\${prompt}\" p
+		fi
+		if [[ \"\${p}\" != [nN] ]] || [[ \"\${2}\" ]]; then
 			\"\${ADMIN[@]}\" rm -Rf \"\${1}\"
 		else
-			say \"\${W}Skipping deletion of\${N} [ \${G}\${1}\${N} ]\"
+			say \"\${W}Skipping deletion of\${N} [\${G}\${1}\${N}]\"
 		fi
 	fi
 }
 make_directory() {
 	if [[ ! -d \"\${1}\" ]]; then
-		say \"\${W}Creating directory\${N} [ \${G}\${1}\${N} ]\"
+		say \"\${W}Creating directory\${N} [\${G}\${1}\${N}]\"
 		local parent=\"\$(dirname \"\${1}\")\"
 		while [[ ! -d \"\${parent}\" ]]; do
 			parent=\"\$(dirname \"\${parent}\")\"
@@ -196,6 +207,12 @@ project_directories() {
 	directories=(\"\${HOME_DIR}\" \"\${BUILD_DIR}\" \"\${FILES_DIR}\" \"\${INSTALL_DIR}/bin\" \"\${INSTALL_DIR}/include\" \"\${INSTALL_DIR}/lib\" \"\${INSTALL_DIR}/lib64\" \"\${LOCAL_INSTALL_DIR}/bin\" \"\${LOCAL_INSTALL_DIR}/include\" \"\${LOCAL_INSTALL_DIR}/lib\" \"\${LOCAL_INSTALL_DIR}/lib64\" \"\${ARCHIVE_DIR}\" \"\${LOCAL_ARCHIVE_DIR}\")
 	for i in \"\${directories[@]}\"; do
 		make_directory \"\${i}\"
+	done
+}
+clean_scripts() {
+	for i in \"\${LOCAL_ARCHIVE_DIR}/script\"*.sh; do
+		remove \"\${i}\" 1
+		continue
 	done
 }
 get_branch() {
@@ -249,8 +266,11 @@ set_variables() {
     \     __ )   |   |   ___|  |   |   ___| 
    _ \    __ \   |   |  |      |   | \___ \ 
   ___ \   |   |  |   |  |      |   |       |
-_/    _\ ____/  \___/  \____| \___/  _____/ 
-\${W}\${PROJECT_SCRIPT}\${N}
+_/    _\ ____/  \___/  \____| \___/  _____/
+\${PROJECT_SCRIPT}
+\${W}\${PROJECT_NAME}:\${N} [\${G}\${PROJECT_URL}\${N}]
+\${W}Abucus Version:\${N} \${E}shasum\${N} [\${G}\${ABUCUS_VERSION}\${N}]
+\${W}Source Version:\${N} \${E}commit\${N} [\${G}\${SRC_VERSION}\${N}]
 ------------------------------------------------------------\"
 }
 print_header() {
@@ -259,21 +279,21 @@ print_header() {
 	say \"\${W}------------------------------------------------------------\${N}\"
 }
 run_abucus() {
-	say \"\${W}\${ABUCUS_LOGO}\${N}\"
-	say \"\${W}Abucus Version:\${N}\t[ \${G}\${ABUCUS_VERSION}\${N} ]\"
-	say \"\${W}Project:\${N}\t[ \${G}\${PROJECT_NAME}\${N} ]\"
-	say \"\${W}URL:\${N}\t\t[ \${G}\${PROJECT_URL}\${N} ]\"
-	say \"\${W}Command:\${N}\tabucus \${ARGUMENTS}\"
-	say \"\${W}Variables:\${N}\"
-	say \"[ \${G}BRANCH\${N} ]\t\t\${BRANCH}\"
-	say \"[ \${G}SRC_VERSION\${N} ]\t\t\${SRC_VERSION}\"
-	say \"[ \${G}PROJECT_DIR\${N} ]\t\t\${PROJECT_DIR}\"
-	say \"[ \${G}INSTALL_DIR\${N} ]\t\t\${INSTALL_DIR}\"
-	say \"[ \${G}ARCHIVE_DIR\${N} ]\t\t\${ARCHIVE_DIR}\"
-	say \"[ \${G}CUSTOM_VAR\${N} ]\t\t\${CUSTOM_VAR}\"
-	say \"[ \${G}BUILD_TYPE\${N} ]\t\t\${BUILD_TYPE}\"
+	say \"\${ABUCUS_LOGO}\"
+	say \"\${W}Usage:\${N}\t\tabucus [\${G}command(s)\${N}] [\${G}option(s)\${N}|\${G}project(s)\${N}]\"
+	say \"\${W}Command:\${N}\t[\${G}abucus \${ARGUMENTS}\${N}]\"
+	say \"\${W}Current Variables:\${N}\"
+	say \"[\${G}BUILD_TYPE\${N}]\t\t\${BUILD_TYPE}\"
+	say \"[\${G}BRANCH\${N}]\t\t\${BRANCH}\"
+	say \"[\${G}CUSTOM_VAR\${N}]\t\t\${CUSTOM_VAR}\"
+	say \"[\${G}INSTALL_DIR\${N}]\t\t\${INSTALL_DIR}\"
+	say \"[\${G}ARCHIVE_DIR\${N}]\t\t\${ARCHIVE_DIR}\"
 	if [[ \"\${PROJECT_NOTES}\" ]]; then
-		say \"\${PROJECT_NOTES}\"
+		say \"[\${G}PROJECT_NOTES\${N}]\t\t\${PROJECT_NOTES}\"
+	fi
+	if [[ \"\${CLEAN_SCRIPTS}\" ]]; then
+		print_header \"Cleaning old scripts\"
+		clean_scripts
 	fi
 	if [[ \"\${CLONE}\" ]]; then
 		print_header \"Cloning\"
@@ -317,37 +337,35 @@ run_abucus() {
 	fi
 }
 print_usage() {
-	say \"\${W}\${ABUCUS_LOGO}\${N}\"
-	say \"\${W}Abucus Version:\${N}\t[ \${G}\${ABUCUS_VERSION}\${N} ]\"
-	say \"\${W}Usage:\${N}\t\tabucus [ \${G}command(s)\${N} ] [ \${G}option(s)\${N} | \${G}project\${N} (\${W} optional \${N}) ]\"
-	say \"\${W}Project:\${N}\t[ \${G}\${PROJECT_NAME}\${N} ]\"
-	say \"\${W}URL:\${N}\t\t[ \${G}\${PROJECT_URL}\${N} ]\"
-	say \"\${W}Source Version:\${N}\t[ \${G}\${SRC_VERSION}\${N} ]\"
-	say \"\${W}Commands:\${N}\tCommands will execute in this order after options are set\"
+	say \"\${ABUCUS_LOGO}\"
+	say \"\${W}Usage:\${N}\tabucus [\${G}command(s)\${N}] [\${G}option(s)\${N}|\${G}project(s)\${N}]\"
+	say \"\${W}Commands:\${N} [\${E}Commands execute in this order\${N}]\"
 	say \"[\${G} h H \${N}]\tPrint this information\"
-	say \"[\${G} j J \${N}]\tEdit abucus script\"
-	say \"[\${G} x X \${N}]\tEdit abucus configuration\"
-	say \"[\${G} z Z \${N}]\tSet BUILD_TYPE [ \${G}Debug\${N} ]\"
-	say \"[\${G} e E \${N}]\tEdit project script\"
-	say \"[\${G} c C \${N}]\tClone project\"
-	say \"[\${G} u U \${N}]\tUpdate project\"
-	say \"[\${G} d D \${N}]\tInstall dependencies\"
-	say \"[\${G} n N \${N}]\tClean project\"
-	say \"[\${G} m M \${N}]\tConfigure project\"
-	say \"[\${G} b B \${N}]\tBuild project\"
-	say \"[\${G} i I \${N}]\tInstall project [ \${G}INSTALL_DIR\${N} ]\"
-	say \"[\${G} r R \${N}]\tRun project\"
-	say \"[\${G} a A \${N}]\tArchive project [ \${G}ARCHIVE_DIR\${N} ]\"
+	say \"[\${G} z Z \${N}]\tBUILD_TYPE \${W}=\${N} \${E}[\${G}Debug\${N}]\"
+	say \"[\${G} l L \${N}]\INSTALL_DIR \${W}=\${N} \${E}[\${G}\${PROJECT_DIR}/install.\${PROJECT_NAME}\${N}]\"
+	say \"[\${G} y Y \${N}]\ARCHIVE_DIR \${W}=\${N} \${E}[\${G}\${PROJECT_DIR}/archive.\${PROJECT_NAME}\${N}]\"
+	say \"[\${G} f F \${N}]\tClean old scripts [\${E}Removes all scripts in ARCHIVE_DIR\${N}]\"
+	say \"[\${G} e E \${N}]\tEdit project script [\${E}Opens ABUCUS_EDITOR to open project script\${N}]\"
+	say \"[\${G} c C \${N}]\tClone project [\${E}Clones projects provided by url and parses name\${N}]\"
+	say \"[\${G} u U \${N}]\tUpdate project [\${E}Update the git remote and all submodules\${N}]\"
+	say \"[\${G} d D \${N}]\tInstall dependencies [\${E}Install host dependencies with auto pm detection\${N}]\"
+	say \"[\${G} n N \${N}]\tClean project [\${E}User defined, defaults to rm and mkdir BUILD_DIR\${N}]\"
+	say \"[\${G} m M \${N}]\tConfigure project [\${E}User defined, defaults to cmake\${N}]\"
+	say \"[\${G} b B \${N}]\tBuild project [\${E}User defined, defaults to ninja\${N}]\"
+	say \"[\${G} i I \${N}]\tInstall project [\${G}INSTALL_DIR\${N}]\"
+	say \"[\${G} r R \${N}]\tRun project [\${E}User defined, defaults to set home directory to local directory\${N}]\"
+	say \"[\${G} a A \${N}]\tArchive project [\${G}ARCHIVE_DIR\${N}] [\${E}Compress project with zstd\${N}]\"
 	say \"\${W}Options:\${N}\"
-	say \"[\${G} o O \${N}] [ \${G}BRANCH\${N} ]\tSet git branch [ \${W}Default:\${N} \${G}master\${N} ]\"
-	say \"[\${G} g G \${N}] [ \${G}CUSTOM_VAR\${N} ]\tSet custom variable [ \${W}Default:\${N} \${G}\${OS}\${N} ]\"
-	say \"[\${G} p P \${N}] [ \${G}INSTALL_DIR\${N} ]\tSet install directory\"
-	say \"[\${G} v V \${N}] [ \${G}ARCHIVE_DIR\${N} ]\tSet archive directory\"
-	say \"\${W}Variables:\${N}\"
-	say \"[ \${G}BRANCH\${N} ]\t\t[ \${G}\${BRANCH}\${N} ]\"
-	say \"[ \${G}INSTALL_DIR\${N} ]\t\t\${INSTALL_DIR}\"
-	say \"[ \${G}ARCHIVE_DIR\${N} ]\t\t\${ARCHIVE_DIR}\"
-	say \"[ \${G}CUSTOM_VAR\${N} ]\t\t\${CUSTOM_VAR}\"
+	say \"[\${G} o O \${N}] [\${G}BRANCH\${N}]\tSet git branch [\${W}Default:\${N} \${G}master\${N}] [\${E}Ex: abucus c o beta\${N}]\"
+	say \"[\${G} g G \${N}] [\${G}CUSTOM_VAR\${N}]\tSet custom variable [\${W}Default:\${N} \${G}\${OS}\${N}] [\${E}Ex: abucus b g testing\${N}]\"
+	say \"[\${G} p P \${N}] [\${G}INSTALL_DIR\${N}]\tSet install directory [\${E}Ex: abucus nmbi p /usr/local\${N}]\"
+	say \"[\${G} v V \${N}] [\${G}ARCHIVE_DIR\${N}]\tSet archive directory [\${E}Ex: abucus a v /home/knuxyl/archives\${N}]\"
+	say \"\${W}Current Variables:\${N}\"
+	say \"[\${G}BUILD_TYPE\${N}]\t\t\${BUILD_TYPE}\"
+	say \"[\${G}BRANCH\${N}]\t\t\${BRANCH}\"
+	say \"[\${G}CUSTOM_VAR\${N}]\t\t\${CUSTOM_VAR}\"
+	say \"[\${G}INSTALL_DIR\${N}]\t\t\${INSTALL_DIR}\"
+	say \"[\${G}ARCHIVE_DIR\${N}]\t\t\${ABUCUS_ARCHIVE_DIR}\"
 	exit 0
 }
 parse_arguments() {
@@ -362,6 +380,7 @@ parse_arguments() {
 			[lL]) INSTALL_DIR=\"\${LOCAL_INSTALL_DIR}\";;
 			[yY]) ARCHIVE_DIR=\"\${LOCAL_ARCHIVE_DIR}\";;
 			[eE]) \"\${ABUCUS_EDITOR}\" \"\${PROJECT_SCRIPT}\";;
+			[fF]) CLEAN_SCRIPTS=1;;
 			[cC]) CLONE=1;;
 			[uU]) UPDATE=1;;
 			[dD]) DEPEND=1;;
@@ -421,7 +440,6 @@ sanitize() {
 update_script() {
 	SCRIPT_VERSION="$(grep "^ABUCUS_VERSION=" "${PROJECT_SCRIPT}" | cut -f 2 -d '"')"
 	if [[ "${SCRIPT_VERSION}" != "${ABUCUS_VERSION}" ]]; then
-		echo "Version= ${SCRIPT_VERSION}"
 		local version="$(echo "${SCRIPT_VERSION}" | cut -f 2 -d ".")"
 		local archive_dir="${PROJECT_DIR}/archive.${PROJECT_NAME}"
 		if [[ "${version}" == "" ]]; then
@@ -450,8 +468,8 @@ update_script() {
 }
 run_abucus() {
 	say "${W}${ABUCUS_LOGO}${N}"
-	say "${W}Version:${N}\t[ ${G}${ABUCUS_VERSION}${N} ]"
-	say "${W}Command:${N}\tabucus ${ARGUMENTS}"
+	say "${W}Command:${N}\t[${G}abucus ${ARGUMENTS}${N}]"
+	say "${W}Projects:${N}"
 	if [[ "${PROJECTS[0]}" ]]; then
 		for PROJECT_NAME in "${PROJECTS[@]}"; do
 			if [[ "${BRANCH}" != 0 ]]; then
@@ -483,7 +501,7 @@ run_abucus() {
 			PROJECT_SCRIPT="${PROJECT_DIR}/script.${PROJECT_NAME}.sh"
 			setup_project
 			update_script
-			say "${W}Running${N}\t[ ${G}${PROJECT_SCRIPT}${N} ] "
+			say "${W}Running${N}\t[${G}${PROJECT_SCRIPT}${N}] "
 			bash "${PROJECT_SCRIPT}" "${COMMANDS}" o "${BRANCH}" p "${INSTALL_DIR}" g "${CUSTOM_VAR}" v "${ABUCUS_ARCHIVE_DIR}"
 		done
 	else
@@ -497,7 +515,7 @@ run_abucus() {
 		for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
 			count=$(printf "%${par_len}d" "${count}")
 			if [[ ! -d "${PROJECT_DIR}" ]]; then
-				say "${R}Project directory not found${N} [${G} ${PROJECT_DIR} ${N}]"
+				say "${R}Project directory not found${N} [${G}${PROJECT_DIR}${N}]"
 				continue
 			fi
 			PROJECT_NAME="${PROJECT_DIR##*/}"
@@ -510,7 +528,7 @@ run_abucus() {
 			exit 1
 		fi
 		say "[${G} a A ${N}]\tAll Projects"
-		local prompt=$(say "${W}Choose a project [${N}${G} 0-$((count - 1)) ${N}${W}|${N}${G} a A ${N}${W}]: ${N}")
+		local prompt=$(say "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}][${N}${G} a A ${N}${W}]: ${N}")
 		read -p "${prompt}" p
 		PROJECT_NAME="${PROJECTS["${p}"]}"
 		if [[ "${p}" =~ [0-9]+ ]]; then
@@ -518,7 +536,7 @@ run_abucus() {
 			PROJECT_SCRIPT="${PROJECT_DIR}/script.${PROJECT_NAME}.sh"
 			setup_project
 			update_script
-			say "${W}Running${N}\t[ ${G}${PROJECT_SCRIPT}${N} ] "
+			say "${W}Running${N}\t[${G}${PROJECT_SCRIPT}${N}] "
 			bash "${PROJECT_SCRIPT}" "${COMMANDS}" o "${BRANCH}" p "${INSTALL_DIR}" g "${CUSTOM_VAR}" v "${ABUCUS_ARCHIVE_DIR}"
 		elif [[ "${p}" == [aA] ]]; then
 			for PROJECT_NAME in "${PROJECTS[@]}"; do
@@ -526,7 +544,7 @@ run_abucus() {
 				PROJECT_SCRIPT="${PROJECT_DIR}/script.${PROJECT_NAME}.sh"
 				setup_project
 				update_script
-				say "${W}Running${N}\t[ ${G}${PROJECT_SCRIPT}${N} ] "
+				say "${W}Running${N}\t[${G}${PROJECT_SCRIPT}${N}] "
 				bash "${PROJECT_SCRIPT}" "${COMMANDS}" o "${BRANCH}" p "${INSTALL_DIR}" g "${CUSTOM_VAR}" v "${ABUCUS_ARCHIVE_DIR}"
 			done
 		else
@@ -537,12 +555,15 @@ run_abucus() {
 	fi
 }
 colors() {
-	G="$(tput setaf 2)"
+	L="$(tput setaf 0)"
 	R="$(tput setaf 1)"
+	G="$(tput setaf 2)"
 	Y="$(tput setaf 3)"
 	B="$(tput setaf 4)"
 	P="$(tput setaf 5)"
+	E="$(tput setaf 6)"
 	W="$(tput bold)$(tput setaf 7)"
+	D="$(tput setaf 8)"
 	N="$(tput sgr0)"
 }
 parse_arguments() {
@@ -559,7 +580,6 @@ parse_arguments() {
 			[xX]) "${ABUCUS_EDITOR}" "${ABUCUS_CONF}";;
 			[zZ]) BUILD_TYPE="Debug";;
 			[tT]) INSTALL_DIR="${ABUCUS_INSTALL_DIR}";;
-			[fF]) UPDATE=1;;
 		esac
 	done
 	shift
@@ -578,48 +598,48 @@ parse_arguments() {
 	if [[ "${HELP}" ]]; then
 		print_usage
 	fi
-	COMMANDS=$(echo "${COMMANDS}" | tr -d 't' | tr -d 'T' | tr -d 's' | tr -d 'S' | tr -d 'j' | tr -d 'J' | tr -d 'x' | tr -d 'X' | tr -d 'f' | tr -d 'F')
+	COMMANDS=$(echo "${COMMANDS}" | tr -d 't' | tr -d 'T' | tr -d 's' | tr -d 'S' | tr -d 'j' | tr -d 'J' | tr -d 'x' | tr -d 'X')
 }
 say() {
     printf '%b\n' "$*"
 }
 print_usage() {
-	say "${W}${ABUCUS_LOGO}${N}"
-	say "${W}Abucus Version:${N}\t[ ${G}${ABUCUS_VERSION}${N} ]"
-	say "${W}Usage:${N}\t\tabucus [ ${G}command(s)${N} ] [ ${G}option(s)${N} | ${G}project${N} (${W} optional ${N}) ]"
-	say "${W}Commands:${N}"
+	say "${ABUCUS_LOGO}"
+	say "${W}Usage:${N}\tabucus [${G}command(s)${N}] [${G}option(s)${N}|${G}project(s)${N}]"
+	say "${W}Commands:${N} [${E}Commands execute in this order${N}]"
 	say "[${G} h H ${N}]\tPrint this information"
-	say "[${G} j J ${N}]\tEdit abucus script"
-	say "[${G} x X ${N}]\tEdit abucus configuration"
-	say "[${G} z Z ${N}]\tSet BUILD_TYPE [ ${G}Debug${N} ]"
-	say "[${G} t T ${N}]\tSet INSTALL_DIR [ ${G}ABUCUS_INSTALL_DIR${N} ]"
-	say "[${G} l L ${N}]\tSet INSTALL_DIR [ ${G}PROJECT_DIR/install.PROJECT_NAME${N} ]"
-	say "[${G} y Y ${N}]\tSet ARCHIVE_DIR [ ${G}PROJECT_DIR/archive.PROJECT_NAME${N} ]"
-	say "[${G} f F ${N}]\tClean old scripts"
-	say "[${G} e E ${N}]\tEdit project script"
-	say "[${G} c C ${N}]\tClone project"
-	say "[${G} u U ${N}]\tUpdate project"
-	say "[${G} d D ${N}]\tInstall dependencies"
-	say "[${G} n N ${N}]\tClean project"
-	say "[${G} m M ${N}]\tConfigure project"
-	say "[${G} b B ${N}]\tBuild project"
-	say "[${G} i I ${N}]\tInstall project [ ${G}INSTALL_DIR${N} ]"
-	say "[${G} r R ${N}]\tRun project"
-	say "[${G} a A ${N}]\tArchive project [ ${G}ABUCUS_ARCHIVE_DIR${N} ]"
+	say "[${G} j J ${N}]\tEdit abucus script [${E}Opens ABUCUS_EDITOR to open abucus script${N}]"
+	say "[${G} x X ${N}]\tEdit abucus configuration [${E}Opens ABUCUS_EDITOR to open configuration file${N}]"
+	say "[${G} z Z ${N}]\tBUILD_TYPE ${W}=${N}${E} [${G}Debug${N}]"
+	say "[${G} t T ${N}]\tINSTALL_DIR ${W}=${N}${E} [${G}ABUCUS_INSTALL_DIR${N}]"
+	say "[${G} l L ${N}]\tINSTALL_DIR ${W}=${N}${E} [${G}PROJECT_DIR/install.PROJECT_NAME${N}]"
+	say "[${G} y Y ${N}]\tARCHIVE_DIR ${W}=${N}${E} [${G}PROJECT_DIR/archive.PROJECT_NAME${N}]"
+	say "[${G} f F ${N}]\tClean old scripts [${E}Removes all scripts in ARCHIVE_DIR${N}]"
+	say "[${G} e E ${N}]\tEdit project script [${E}Opens ABUCUS_EDITOR to open project script${N}]"
+	say "[${G} c C ${N}]\tClone project [${E}Clones projects provided by url and parses name${N}]"
+	say "[${G} u U ${N}]\tUpdate project [${E}Update the git remote and all submodules${N}]"
+	say "[${G} d D ${N}]\tInstall dependencies [${E}Install host dependencies with auto pm detection${N}]"
+	say "[${G} n N ${N}]\tClean project [${E}User defined, defaults to rm and mkdir BUILD_DIR${N}]"
+	say "[${G} m M ${N}]\tConfigure project [${E}User defined, defaults to cmake${N}]"
+	say "[${G} b B ${N}]\tBuild project [${E}User defined, defaults to ninja${N}]"
+	say "[${G} i I ${N}]\tInstall project [${G}INSTALL_DIR${N}]"
+	say "[${G} r R ${N}]\tRun project [${E}User defined, defaults to set home directory to local directory${N}]"
+	say "[${G} a A ${N}]\tArchive project [${G}ABUCUS_ARCHIVE_DIR${N}] [${E}Compress project with zstd${N}]"
 	say "${W}Options:${N}"
-	say "[${G} o O ${N}] [ ${G}BRANCH${N} ]\tSet git branch [ ${W}Default:${N} ${G}master${N} ]"
-	say "[${G} g G ${N}] [ ${G}CUSTOM_VAR${N} ]\tSet custom variable [ ${W}Default:${N} ${G}${OS}${N} ]"
-	say "[${G} p P ${N}] [ ${G}INSTALL_DIR${N} ]\tSet install directory"
-	say "[${G} v V ${N}] [ ${G}ARCHIVE_DIR${N} ]\tSet archive directory"
-	say "${W}Variables:${N}"
-	say "[${G} ABUCUS_DIR ${N}]\t\t${ABUCUS_DIR}"
-	say "[${G} ABUCUS_SCRIPT ${N}]\t${ABUCUS_SCRIPT}"
-	say "[${G} ABUCUS_CONF ${N}]\t\t${ABUCUS_CONF}"
-	say "[${G} ABUCUS_PROJECTS_DIR ${N}]\t${ABUCUS_PROJECTS_DIR}"
-	say "[${G} ABUCUS_INSTALL_DIR ${N}]\t${ABUCUS_INSTALL_DIR}"
-	say "[${G} ABUCUS_ARCHIVE_DIR ${N}]\t${ABUCUS_ARCHIVE_DIR}"
-	say "[ ${G}INSTALL_DIR${N} ]\t\t${INSTALL_DIR}"
-	say "[ ${G}CUSTOM_VAR${N} ]\t\t${CUSTOM_VAR}"
+	say "[${G} o O ${N}] [${G}BRANCH${N}]\tSet git branch [${W}Default:${N} ${G}master${N}] [${E}Ex: abucus c o beta${N}]"
+	say "[${G} g G ${N}] [${G}CUSTOM_VAR${N}]\tSet custom variable [${W}Default:${N} ${G}${OS}${N}] [${E}Ex: abucus b g testing${N}]"
+	say "[${G} p P ${N}] [${G}INSTALL_DIR${N}]\tSet install directory [${E}Ex: abucus nmbi p /usr/local${N}]"
+	say "[${G} v V ${N}] [${G}ARCHIVE_DIR${N}]\tSet archive directory [${E}Ex: abucus a v /home/knuxyl/archives${N}]"
+	say "${W}Current Variables:${N}"
+	say "[${G}ABUCUS_DIR${N}]\t\t${ABUCUS_DIR}"
+	say "[${G}ABUCUS_SCRIPT${N}]\t\t${ABUCUS_SCRIPT}"
+	say "[${G}ABUCUS_CONF${N}]\t\t${ABUCUS_CONF}"
+	say "[${G}ABUCUS_PROJECTS_DIR${N}]\t${ABUCUS_PROJECTS_DIR}"
+	say "[${G}ABUCUS_INSTALL_DIR${N}]\t${ABUCUS_INSTALL_DIR}"
+	say "[${G}ABUCUS_ARCHIVE_DIR${N}]\t${ABUCUS_ARCHIVE_DIR}"
+	say "[${G}INSTALL_DIR${N}]\t\t${INSTALL_DIR}"
+	say "[${G}CUSTOM_VAR${N}]\t\t${CUSTOM_VAR}"
+	say "[${G}BUILD_TYPE${N}]\t\t${BUILD_TYPE}"
 }
 create_directories() {
 	directories=("${ABUCUS_HOME}" "${ABUCUS_PROJECTS_DIR}" "${INSTALL_DIR}/bin" "${INSTALL_DIR}/include" "${INSTALL_DIR}/lib" "${INSTALL_DIR}/lib64" "${ABUCUS_INSTALL_DIR}/bin" "${ABUCUS_INSTALL_DIR}/include" "${ABUCUS_INSTALL_DIR}/lib" "${ABUCUS_INSTALL_DIR}/lib64" "${ABUCUS_ARCHIVE_DIR}")
@@ -627,27 +647,31 @@ create_directories() {
 		make_directory "${i}"
 	done
 }
-remove_directory() {
-	local prompt="$(say "${W}Deleting directory${N} [ ${R}${1}${N} ] ${W}Continue?${N} [ ${G}Y/n${N} ]: ")"
+remove() {
+	local prompt="$(say "${W}Deleting directory${N} [${R}${1}${N}] Continue? [${G}Y/n${N}]: ")"
 	if [[ -w "$(dirname "${1}")" ]]; then
-		read -p "${prompt}" p
-		if [[ "${p}" != [nN] ]]; then
+		if [[ ! "${2}" ]]; then
+			read -p "${prompt}" p
+		fi
+		if [[ "${p}" != [nN] ]] || [[ "${2}" ]]; then
 			rm -Rf "${1}"
 		else
-			say "${W}Skipping deletion of${N} [ ${G}${1}${N} ]"
+			say "${W}Skipping deletion of${N} [${G}${1}${N}]"
 		fi
 	else
-		read -p "${prompt}" p
-		if [[ "${p}" != [nN] ]]; then
+		if [[ ! "${2}" ]]; then
+			read -p "${prompt}" p
+		fi
+		if [[ "${p}" != [nN] ]] || [[ "${2}" ]]; then
 			"${ADMIN[@]}" rm -Rf "${1}"
 		else
-			say "${W}Skipping deletion of${N} [ ${G}${1}${N} ]"
+			say "${W}Skipping deletion of${N} [${G}${1}${N}]"
 		fi
 	fi
 }
 make_directory() {
 	if [[ ! -d "${1}" ]]; then
-		say "${W}Creating directory${N} [ ${G}${1}${N} ]"
+		say "${W}Creating directory${N} [${G}${1}${N}]"
 		local parent="$(dirname "${1}")"
 		while [[ ! -d "${parent}" ]]; do
 			parent="$(dirname "${parent}")"
