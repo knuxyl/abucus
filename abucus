@@ -17,6 +17,13 @@ set_variables() {
 	export ABUCUS_ARCHIVE_DIR="${ARCHIVE_DIR:-${ABUCUS_DIR}/archive}"
 	BUILD_TYPE="${BUILD_TYPE:-Release}"
 	CUSTOM_VAR="${CUSTOM_VAR:-${OS}}"
+	local file_managers=("nautilus" "dolphin" "thunar" "nemo" "caja" "pcmanfm" "pcmanfm-qt")
+	for i in "${file_managers[@]}"; do
+		if [[ "$(command -v "${i}")" ]]; then
+			ABUCUS_FM="$(command -v "${i}")"
+			break
+		fi
+	done
 	ADMIN=()
 	if [[ "${UID}" != 0 ]]; then
 		if [[ "$(command -v sudo)" ]]; then
@@ -36,59 +43,6 @@ ${ABUCUS_SCRIPT}
 ${W}Abucus Version:${N} ${E}shasum${N} [${G}${ABUCUS_VERSION}${N}]
 ------------------------------------------------------------"
 }
-clean_project="	if [[ -d \"\${BUILD_DIR}\" ]]; then
-		remove \"\${BUILD_DIR}\"
-	fi
-	make_directory \"\${BUILD_DIR}\""
-configure_project="	cmake -S \"\${SRC_DIR}\" -B \"\${BUILD_DIR}\" -G Ninja -L -DCMAKE_BUILD_TYPE=\"\${BUILD_TYPE}\" -DCMAKE_INSTALL_PREFIX=\"\${INSTALL_DIR}\"
-	#meson setup \"\${BUILD_DIR}\" -Dbuildtype=\"\${BUILD_TYPE}\" -Dprefix=\"\${INSTALL_DIR}\" \"\${SRC_DIR}\"}"
-build_project="	ninja -C \"\${BUILD_DIR}\" -j\"\$(nproc)\""
-install_project="	if [[ -w \"\${INSTALL_DIR}\" ]]; then
-		ninja -C \"\${BUILD_DIR}\" -j\"\$(nproc)\" install
-	else
-		\"\${ADMIN[@]}\" ninja -C \"\${BUILD_DIR}\" -j\"\$(nproc)\" install
-	fi"
-run_project="	export HOME=\"\${HOME_DIR}\"
-	BINARY=\"\"
-	if [[ ! -f \"\${BINARY}\" ]]; then
-		say \"[ \${G}\${BINARY}\${N} ] \${R}does not exist\${N}\"
-		exit 1
-	fi
-	\"\${BINARY}\""
-abucus_project="	abucus_deps=()
-	for i in \"\${deps[@]}\"; do
-		abucus uzmbi \"\${i}\"
-	done"
-project_dependencies="	abucus_deps=\"\"
-	emerge_deps=\"\"
-	apt_deps=\"\"
-	dnf_deps=\"\"
-	apk_deps=\"\"
-	opkg_deps=\"\"
-	pacman_deps=\"\"
-	zypper_deps=\"\"
-	if [[ \"\$(command -v emerge)\" ]]; then
-		deps=\"\${emerge_deps/>/\\>}\"
-		\"\${ADMIN[@]}\" emerge -av \${deps}
-	elif [[ \"\$(command -v apt)\" ]]; then
-		deps=\"\${apt_deps/>/\\>}\"
-		\"\${ADMIN[@]}\" apt install \${deps}
-	elif [[ \"\$(command -v dnf)\" ]]; then
-		deps=\"\${dnf_deps/>/\\>}\"
-		\"\${ADMIN[@]}\" dnf install \${deps}
-	elif [[ \"\$(command -v apk)\" ]]; then
-		deps=\"\${apk_deps/>/\\>}\"
-		\"\${ADMIN[@]}\" apk add \${deps}
-	elif [[ \"\$(command -v opkg)\" ]]; then
-		deps=\"\${opkg_deps/>/\\>}\"
-		\"\${ADMIN[@]}\" opkg install \${deps}
-	elif [[ \"\$(command -v pacman)\" ]]; then
-		deps=\"\${pacman_deps/>/\\>}\"
-		\"\${ADMIN[@]}\" pacman -S \${deps}
-	elif [[ \"\$(command -v zypper)\" ]]; then
-		deps=\"\${zypper_deps/>/\\>}\"
-		\"\${ADMIN[@]}\" zypper install \${deps}
-	fi"
 setup_project() {
 	directories=("${PROJECT_DIR}/home.${PROJECT_NAME}" "${PROJECT_DIR}/build.${PROJECT_NAME}" "${PROJECT_DIR}/files.${PROJECT_NAME}" "${PROJECT_DIR}/install.${PROJECT_NAME}/bin" "${PROJECT_DIR}/install.${PROJECT_NAME}/include" "${PROJECT_DIR}/install.${PROJECT_NAME}/lib" "${PROJECT_DIR}/install.${PROJECT_NAME}/lib64" "${PROJECT_DIR}/archive.${PROJECT_NAME}")
 	for i in "${directories[@]}"; do
@@ -150,10 +104,10 @@ archive_project() {
 	fi
 }
 abucus_dependencies() {
-${abucus_function:-${abucus_project}}
+${abucus_functions:-${abucus_project}}
 }
 dependencies() {
-${dependency_function:-${project_dependencies}}	
+${dependency_function:-${dependency_project}}
 }
 colors() {
 	L=\"\$(tput setaf 0)\"
@@ -230,6 +184,7 @@ get_branch() {
 set_variables() {
 	OS=\"\${OS:-\$(source /etc/os-release; echo \"\${ID,,}\")}\"
 	CPU_ARCH=\"\${CPU_ARCH:-\$(uname -m)}\"
+	ABUCUS_SCRIPT=\"\$(command -v abucus)\"
 	PROJECT_DIR=\"\$(cd -- \"\$(dirname -- \"\${0}\")\" && pwd -P)\"
 	PROJECT_SCRIPT=\"\${PROJECT_DIR}/\${0##*/}\"
 	SRC_DIR=\"\${PROJECT_DIR}/src.\${PROJECT_NAME}\"
@@ -243,6 +198,13 @@ set_variables() {
 	CUSTOM_VAR=\"\${CUSTOM_VAR:-\${OS}}\"
 	BUILD_TYPE=\"\${BUILD_TYPE:-Release}\"
 	ABUCUS_EDITOR=\"\${ABUCUS_EDITOR:-\$(command -v nano)}\"
+	local file_managers=(\"nautilus\" \"dolphin\" \"thunar\" \"nemo\" \"caja\" \"pcmanfm\" \"pcmanfm-qt\")
+	for i in \"\${file_managers[@]}\"; do
+		if [[ \"\$(command -v \"\${i}\")\" ]]; then
+			ABUCUS_FM=\"\$(command -v \"\${i}\")\"
+			break
+		fi
+	done
 	ADMIN=()
 	if [[ \"\${UID}\" != 0 ]]; then
 		if [[ \"\$(command -v sudo)\" ]]; then
@@ -273,11 +235,6 @@ _/    _\ ____/  \___/  \____| \___/  _____/
 \${W}Source Version:\${N} \${E}commit\${N} [\${G}\${SRC_VERSION}\${N}]
 ------------------------------------------------------------\"
 }
-print_header() {
-	say \"\${W}------------------------------------------------------------\${N}\"
-	say \"\${W}\${1}\${N} [ \${G}\${PROJECT_NAME}\${N} ]\"
-	say \"\${W}------------------------------------------------------------\${N}\"
-}
 run_abucus() {
 	say \"\${ABUCUS_LOGO}\"
 	say \"\${W}Usage:\${N}\t\tabucus [\${G}command(s)\${N}] [\${G}option(s)\${N}|\${G}project(s)\${N}]\"
@@ -291,48 +248,90 @@ run_abucus() {
 	if [[ \"\${PROJECT_NOTES}\" ]]; then
 		say \"[\${G}PROJECT_NOTES\${N}]\t\t\${PROJECT_NOTES}\"
 	fi
+	if [[ \"\${ABUCUS}\" ]]; then
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Running dependencies\${N}\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		abucus_dependencies
+	fi
 	if [[ \"\${CLEAN_SCRIPTS}\" ]]; then
-		print_header \"Cleaning old scripts\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Cleaning old scripts\${N} [\${R}\${LOCAL_ARCHIVE_DIR}/script*.sh\${N}]\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		clean_scripts
 	fi
+	if [[ \"\${OPEN}\" ]]; then
+		if [[ ! \"\${ABUCUS_FM}\" ]]; then
+			say \"\${R}File manager not set [ABUCUS_FM]\${N}\"
+			exit 1
+		fi
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Opening\${N} [\${G}\${PROJECT_DIR}\${N}] with [\${G}\${ABUCUS_FM}\${N}]\"
+		\"\${ABUCUS_FM}\" \"\${PROJECT_DIR}\" &
+		say \"\${W}------------------------------------------------------------\${N}\"
+	fi
+	if [[ \"\${EDIT}\" ]]; then
+		if [[ ! \"\${ABUCUS_EDITOR}\" ]]; then
+			say \"\${R}Text editor not set [ABUCUS_EDITOR]\${N}\"
+			exit 1
+		fi
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Editing\${N} [\${G}\${PROJECT_SCRIPT}\${N}] with [\${G}\${ABUCUS_EDITOR}\${N}]\"
+		\"\${ABUCUS_EDITOR}\" \"\${PROJECT_SCRIPT}\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+	fi
 	if [[ \"\${CLONE}\" ]]; then
-		print_header \"Cloning\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Cloning\${N} [\${G}\${PROJECT_URL}\${N}]\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		clone_project
 	fi
 	if [[ \"\${UPDATE}\" ]]; then
-		print_header \"Updating\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Updating\${N}\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		update_project
 	fi
-	if [[ \"\${EDIT}\" ]]; then
-		print_header \"Editing\"
-		\"\${ABUCUS_EDITOR}\" \"\${PROJECT_SCRIPT}\"
-	fi
 	if [[ \"\${DEPEND}\" ]]; then
-		print_header \"Installing dependencies\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Installing dependencies\${N} for [\${G}\${OS}\${N}]\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		dependencies
 	fi
 	if [[ \"\${CLEAN}\" ]]; then
-		print_header \"Cleaning\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Cleaning\${N}\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		clean_project
 	fi
 	if [[ \"\${CONFIGURE}\" ]]; then
-		print_header \"Configuring\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Configuring\${N}\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		configure_project
 	fi
 	if [[ \"\${BUILD}\" ]]; then
-		print_header \"Building\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Building\${N}\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		build_project
 	fi
 	if [[ \"\${INSTALL}\" ]]; then
-		print_header \"Installing\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Installing\${N} to [\${G}\${INSTALL_DIR}\${N}]\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		install_project
 	fi
 	if [[ \"\${RUN}\" ]]; then
-		print_header \"Running\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Running\${N}\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		run_project
 	fi
 	if [[ \"\${ARCHIVE}\" ]]; then
-		print_header \"Archiving\"
+		say \"\${W}------------------------------------------------------------\${N}\"
+		say \"\${W}Archiving\${N} to [\${G}\${ARCHIVE_DIR}\${N}]\"
+		say \"\${W}------------------------------------------------------------\${N}\"
 		archive_project
 	fi
 }
@@ -342,9 +341,10 @@ print_usage() {
 	say \"\${W}Commands:\${N} [\${E}Commands execute in this order\${N}]\"
 	say \"[\${G} h H \${N}]\tPrint this information\"
 	say \"[\${G} z Z \${N}]\tBUILD_TYPE \${W}=\${N} \${E}[\${G}Debug\${N}]\"
-	say \"[\${G} l L \${N}]\INSTALL_DIR \${W}=\${N} \${E}[\${G}\${PROJECT_DIR}/install.\${PROJECT_NAME}\${N}]\"
-	say \"[\${G} y Y \${N}]\ARCHIVE_DIR \${W}=\${N} \${E}[\${G}\${PROJECT_DIR}/archive.\${PROJECT_NAME}\${N}]\"
+	say \"[\${G} l L \${N}]\tINSTALL_DIR \${W}=\${N} \${E}[\${G}\${PROJECT_DIR}/install.\${PROJECT_NAME}\${N}]\"
+	say \"[\${G} y Y \${N}]\tARCHIVE_DIR \${W}=\${N} \${E}[\${G}\${PROJECT_DIR}/archive.\${PROJECT_NAME}\${N}]\"
 	say \"[\${G} f F \${N}]\tClean old scripts [\${E}Removes all scripts in ARCHIVE_DIR\${N}]\"
+	say \"[\${G} q Q \${N}]\tOpen project directory with file manager [\${E}Opens with ABUCUS_FM\${N}]\"
 	say \"[\${G} e E \${N}]\tEdit project script [\${E}Opens ABUCUS_EDITOR to open project script\${N}]\"
 	say \"[\${G} c C \${N}]\tClone project [\${E}Clones projects provided by url and parses name\${N}]\"
 	say \"[\${G} u U \${N}]\tUpdate project [\${E}Update the git remote and all submodules\${N}]\"
@@ -352,15 +352,18 @@ print_usage() {
 	say \"[\${G} n N \${N}]\tClean project [\${E}User defined, defaults to rm and mkdir BUILD_DIR\${N}]\"
 	say \"[\${G} m M \${N}]\tConfigure project [\${E}User defined, defaults to cmake\${N}]\"
 	say \"[\${G} b B \${N}]\tBuild project [\${E}User defined, defaults to ninja\${N}]\"
-	say \"[\${G} i I \${N}]\tInstall project [\${G}INSTALL_DIR\${N}]\"
+	say \"[\${G} i I \${N}]\tInstall project [\${G}INSTALL_DIR\${N}] [\${E}User defined, defaults to ninja\${N}]\"
 	say \"[\${G} r R \${N}]\tRun project [\${E}User defined, defaults to set home directory to local directory\${N}]\"
-	say \"[\${G} a A \${N}]\tArchive project [\${G}ARCHIVE_DIR\${N}] [\${E}Compress project with zstd\${N}]\"
+	say \"[\${G} a A \${N}]\tArchive project [\${G}ARCHIVE_DIR\${N}] [\${E}Archive project with tar and zstd\${N}]\"
+	say \"[\${G} k K \${N}]\tRun commands against project's abucus dependencies recursively [\${E}Does not pass BRANCH\${N}]\"
 	say \"\${W}Options:\${N}\"
 	say \"[\${G} o O \${N}] [\${G}BRANCH\${N}]\tSet git branch [\${W}Default:\${N} \${G}master\${N}] [\${E}Ex: abucus c o beta\${N}]\"
 	say \"[\${G} g G \${N}] [\${G}CUSTOM_VAR\${N}]\tSet custom variable [\${W}Default:\${N} \${G}\${OS}\${N}] [\${E}Ex: abucus b g testing\${N}]\"
 	say \"[\${G} p P \${N}] [\${G}INSTALL_DIR\${N}]\tSet install directory [\${E}Ex: abucus nmbi p /usr/local\${N}]\"
 	say \"[\${G} v V \${N}] [\${G}ARCHIVE_DIR\${N}]\tSet archive directory [\${E}Ex: abucus a v /home/knuxyl/archives\${N}]\"
 	say \"\${W}Current Variables:\${N}\"
+	say \"[\${G}ABUCUS_FM\${N}]\t\t\${ABUCUS_FM}\"
+	say \"[\${G}ABUCUS_EDITOR\${N}]\t\t\${ABUCUS_EDITOR}\"
 	say \"[\${G}BUILD_TYPE\${N}]\t\t\${BUILD_TYPE}\"
 	say \"[\${G}BRANCH\${N}]\t\t\${BRANCH}\"
 	say \"[\${G}CUSTOM_VAR\${N}]\t\t\${CUSTOM_VAR}\"
@@ -377,10 +380,11 @@ parse_arguments() {
 		case \"\${arg}\" in
 			[hH]) HELP=1;;
 			[zZ]) BUILD_TYPE=\"Debug\";;
-			[lL]) INSTALL_DIR=\"\${LOCAL_INSTALL_DIR}\";;
-			[yY]) ARCHIVE_DIR=\"\${LOCAL_ARCHIVE_DIR}\";;
-			[eE]) \"\${ABUCUS_EDITOR}\" \"\${PROJECT_SCRIPT}\";;
+			[lL]) LOCAL_INSTALL=1;;
+			[yY]) LOCAL_ARCHIVE=1;;
 			[fF]) CLEAN_SCRIPTS=1;;
+			[qQ]) OPEN=1;;
+			[eE]) EDIT=1;;
 			[cC]) CLONE=1;;
 			[uU]) UPDATE=1;;
 			[dD]) DEPEND=1;;
@@ -390,6 +394,7 @@ parse_arguments() {
 			[iI]) INSTALL=1;;
 			[rR]) RUN=1;;
 			[aA]) ARCHIVE=1;;
+			[kK]) ABUCUS=1;;
 			*) echo -e \"\${R}Invalid argument\${N} [ \${G}\${1}\${N} ]\"; shift;;
 		esac
 	done
@@ -403,6 +408,12 @@ parse_arguments() {
 			*) echo \"\${R}Invalid argument\${N} [ \${G}\${1}\${N} ]\"; shift;;
 		esac
 	done
+	if [[ \"\${LOCAL_INSTALL}\" ]]; then
+		INSTALL_DIR=\"\${LOCAL_INSTALL_DIR}\"
+	fi
+	if [[ \"\${LOCAL_ARCHIVE}\" ]]; then
+		ARCHIVE_DIR=\"\${LOCAL_ARCHIVE_DIR}\"
+	fi
 	get_branch
 	if [[ ! \"\${PROJECT_URL}\" ]] && [[ -d \"\${SRC_DIR}\" ]]; then
 		PROJECT_URL=\"\$(git -C \"\${SRC_DIR}\" remote get-url origin)\"
@@ -425,6 +436,7 @@ say() {
 }
 ABUCUS_VERSION=\"${ABUCUS_VERSION}\"
 ARGUMENTS=\"\${@}\"
+COMMANDS=\"\${1}\"
 colors
 set_variables
 check_dependencies
@@ -434,6 +446,64 @@ run_abucus
 " > "${PROJECT_SCRIPT}"
 	fi
 }
+clean_project="	if [[ -d \"\${BUILD_DIR}\" ]]; then
+		remove \"\${BUILD_DIR}\"
+	fi
+	make_directory \"\${BUILD_DIR}\""
+configure_project="	cmake -S \"\${SRC_DIR}\" -B \"\${BUILD_DIR}\" -G Ninja -L -DCMAKE_BUILD_TYPE=\"\${BUILD_TYPE}\" -DCMAKE_INSTALL_PREFIX=\"\${INSTALL_DIR}\"
+	#meson setup \"\${BUILD_DIR}\" -Dbuildtype=\"\${BUILD_TYPE}\" -Dprefix=\"\${INSTALL_DIR}\" \"\${SRC_DIR}\"}"
+build_project="	ninja -C \"\${BUILD_DIR}\" -j\"\$(nproc)\""
+install_project="	if [[ -w \"\${INSTALL_DIR}\" ]]; then
+		ninja -C \"\${BUILD_DIR}\" -j\"\$(nproc)\" install
+	else
+		\"\${ADMIN[@]}\" ninja -C \"\${BUILD_DIR}\" -j\"\$(nproc)\" install
+	fi"
+run_project="	export HOME=\"\${HOME_DIR}\"
+	BINARY=\"\"
+	if [[ ! -f \"\${BINARY}\" ]]; then
+		say \"[ \${G}\${BINARY}\${N} ] \${R}does not exist\${N}\"
+		exit 1
+	fi
+	\"\${BINARY}\""
+abucus_project="	if [[ ! \"\${ABUCUS_SCRIPT}\" ]]; then
+		say \"\${R}Location of abucus script not set [ABUCUS_SCRIPT]\${N}\"
+		exit 1
+	fi
+	abucus_deps=()
+	for i in \"\${abucus_deps[@]}\"; do
+		if [[ \"\${i}\" ]]; then
+			\"\${ABUCUS_SCRIPT}\" \${COMMANDS} p \"\${INSTALL_DIR}\" g \"\${CUSTOM_VAR}\" v \"\${ARCHIVE_DIR}\" \"\${i}\"
+		fi
+	done"
+dependency_project="	emerge_deps=\"\"
+	apt_deps=\"\"
+	dnf_deps=\"\"
+	apk_deps=\"\"
+	opkg_deps=\"\"
+	pacman_deps=\"\"
+	zypper_deps=\"\"
+	if [[ \"\$(command -v emerge)\" ]]; then
+		deps=\"\${emerge_deps/>/\\>}\"
+		\"\${ADMIN[@]}\" emerge -av \${deps}
+	elif [[ \"\$(command -v apt)\" ]]; then
+		deps=\"\${apt_deps/>/\\>}\"
+		\"\${ADMIN[@]}\" apt install \${deps}
+	elif [[ \"\$(command -v dnf)\" ]]; then
+		deps=\"\${dnf_deps/>/\\>}\"
+		\"\${ADMIN[@]}\" dnf install \${deps}
+	elif [[ \"\$(command -v apk)\" ]]; then
+		deps=\"\${apk_deps/>/\\>}\"
+		\"\${ADMIN[@]}\" apk add \${deps}
+	elif [[ \"\$(command -v opkg)\" ]]; then
+		deps=\"\${opkg_deps/>/\\>}\"
+		\"\${ADMIN[@]}\" opkg install \${deps}
+	elif [[ \"\$(command -v pacman)\" ]]; then
+		deps=\"\${pacman_deps/>/\\>}\"
+		\"\${ADMIN[@]}\" pacman -S \${deps}
+	elif [[ \"\$(command -v zypper)\" ]]; then
+		deps=\"\${zypper_deps/>/\\>}\"
+		\"\${ADMIN[@]}\" zypper install \${deps}
+	fi"
 sanitize() {
 	echo "${1}" | sed 's/[<>:"\/\\|?*]//g' | sed 's/[[:cntrl:]]//g'
 }
@@ -457,8 +527,8 @@ update_script() {
 		configure_function="$(sed -n '/^configure_project()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
 		install_function="$(sed -n '/^install_project()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
 		run_function="$(sed -n '/^run_project()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
-		abucus_function="$(sed -n '/^abucus_dependencies()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
-		dependency_function="$(sed -n '/^dependencies()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
+		#abucus_function="$(sed -n '/^abucus_dependencies()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
+		#dependency_function="$(sed -n '/^dependencies()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
 		PROJECT_URL="$(grep -m1 "^PROJECT_URL=" "${PROJECT_SCRIPT}" | cut -f 2 -d '"')"
 		PROJECT_NOTES="$(grep -m1 "^PROJECT_NOTES=" "${PROJECT_SCRIPT}" | cut -f 2 -d '"')"
 		local count=0
@@ -469,7 +539,33 @@ update_script() {
 run_abucus() {
 	say "${W}${ABUCUS_LOGO}${N}"
 	say "${W}Command:${N}\t[${G}abucus ${ARGUMENTS}${N}]"
-	say "${W}Projects:${N}"
+	if [[ "${OPEN}" ]]; then
+		if [[ ! "${ABUCUS_FM}" ]]; then
+			say "${R}File manager not set [ABUCUS_FM]${N}"
+			exit 1
+		fi
+		say "${W}Opening${N} [${G}${ABUCUS_DIR}${N}] with [${G}${ABUCUS_FM}${N}]"
+		"${ABUCUS_FM}" "${ABUCUS_DIR}"
+	fi
+	if [[ "${EDIT_SCRIPT}" ]]; then
+		if [[ ! "${ABUCUS_EDITOR}" ]]; then
+			say "${R}Text editor not set [ABUCUS_EDITOR]${N}"
+			exit 1
+		fi
+		say "${W}Editing${N} [${G}${ABUCUS_SCRIPT}${N}] with [${G}${ABUCUS_EDITOR}${N}]"
+		"${ABUCUS_EDITOR}" "${ABUCUS_SCRIPT}"
+	fi
+	if [[ "${EDIT_CONF}" ]]; then
+		if [[ ! "${ABUCUS_EDITOR}" ]]; then
+			say "${R}Text editor not set [ABUCUS_EDITOR]${N}"
+			exit 1
+		fi
+		say "${W}Editing${N} [${G}${ABUCUS_CONF}${N}] with [${G}${ABUCUS_EDITOR}${N}]"
+		"${ABUCUS_EDITOR}" "${ABUCUS_CONF}"
+	fi
+	if [[ ! "${COMMANDS}" ]]; then
+		exit 0
+	fi
 	if [[ "${PROJECTS[0]}" ]]; then
 		for PROJECT_NAME in "${PROJECTS[@]}"; do
 			if [[ "${BRANCH}" != 0 ]]; then
@@ -501,10 +597,11 @@ run_abucus() {
 			PROJECT_SCRIPT="${PROJECT_DIR}/script.${PROJECT_NAME}.sh"
 			setup_project
 			update_script
-			say "${W}Running${N}\t[${G}${PROJECT_SCRIPT}${N}] "
+			say "${W}Running${N}\t[${G}${PROJECT_SCRIPT}${N}]"
 			bash "${PROJECT_SCRIPT}" "${COMMANDS}" o "${BRANCH}" p "${INSTALL_DIR}" g "${CUSTOM_VAR}" v "${ABUCUS_ARCHIVE_DIR}"
 		done
 	else
+		say "${W}Projects:${N}"
 		PROJECTS=()
 		total_count=-1
 		for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
@@ -576,6 +673,7 @@ parse_arguments() {
 		arg="${COMMANDS:${i}:1}"
 		case "${arg}" in
 			[hH]) HELP=1;;
+			[xX]) OPEN=1;;
 			[jJ]) "${ABUCUS_EDITOR}" "${ABUCUS_SCRIPT}";;
 			[xX]) "${ABUCUS_EDITOR}" "${ABUCUS_CONF}";;
 			[zZ]) BUILD_TYPE="Debug";;
@@ -608,6 +706,7 @@ print_usage() {
 	say "${W}Usage:${N}\tabucus [${G}command(s)${N}] [${G}option(s)${N}|${G}project(s)${N}]"
 	say "${W}Commands:${N} [${E}Commands execute in this order${N}]"
 	say "[${G} h H ${N}]\tPrint this information"
+	say "[${G} x X ${N}]\tOpen abucus directory with file manager [${E}Opens with ABUCUS_FM${N}]"
 	say "[${G} j J ${N}]\tEdit abucus script [${E}Opens ABUCUS_EDITOR to open abucus script${N}]"
 	say "[${G} x X ${N}]\tEdit abucus configuration [${E}Opens ABUCUS_EDITOR to open configuration file${N}]"
 	say "[${G} z Z ${N}]\tBUILD_TYPE ${W}=${N}${E} [${G}Debug${N}]"
@@ -615,6 +714,7 @@ print_usage() {
 	say "[${G} l L ${N}]\tINSTALL_DIR ${W}=${N}${E} [${G}PROJECT_DIR/install.PROJECT_NAME${N}]"
 	say "[${G} y Y ${N}]\tARCHIVE_DIR ${W}=${N}${E} [${G}PROJECT_DIR/archive.PROJECT_NAME${N}]"
 	say "[${G} f F ${N}]\tClean old scripts [${E}Removes all scripts in ARCHIVE_DIR${N}]"
+	say "[${G} q Q ${N}]\tOpen project directory with file manager [${E}Opens in ABUCUS_FM${N}]"
 	say "[${G} e E ${N}]\tEdit project script [${E}Opens ABUCUS_EDITOR to open project script${N}]"
 	say "[${G} c C ${N}]\tClone project [${E}Clones projects provided by url and parses name${N}]"
 	say "[${G} u U ${N}]\tUpdate project [${E}Update the git remote and all submodules${N}]"
@@ -622,24 +722,24 @@ print_usage() {
 	say "[${G} n N ${N}]\tClean project [${E}User defined, defaults to rm and mkdir BUILD_DIR${N}]"
 	say "[${G} m M ${N}]\tConfigure project [${E}User defined, defaults to cmake${N}]"
 	say "[${G} b B ${N}]\tBuild project [${E}User defined, defaults to ninja${N}]"
-	say "[${G} i I ${N}]\tInstall project [${G}INSTALL_DIR${N}]"
+	say "[${G} i I ${N}]\tInstall project [${G}INSTALL_DIR${N}] [${E}User defined, defaults to ninja${N}]"
 	say "[${G} r R ${N}]\tRun project [${E}User defined, defaults to set home directory to local directory${N}]"
-	say "[${G} a A ${N}]\tArchive project [${G}ABUCUS_ARCHIVE_DIR${N}] [${E}Compress project with zstd${N}]"
+	say "[${G} a A ${N}]\tArchive project [${G}ABUCUS_ARCHIVE_DIR${N}] [${E}Archive project with tar and zstd${N}]"
+	say "[${G} k K ${N}]\tRun commands against project's abucus dependencies recursively [${E}Does not pass BRANCH${N}]"
 	say "${W}Options:${N}"
 	say "[${G} o O ${N}] [${G}BRANCH${N}]\tSet git branch [${W}Default:${N} ${G}master${N}] [${E}Ex: abucus c o beta${N}]"
 	say "[${G} g G ${N}] [${G}CUSTOM_VAR${N}]\tSet custom variable [${W}Default:${N} ${G}${OS}${N}] [${E}Ex: abucus b g testing${N}]"
 	say "[${G} p P ${N}] [${G}INSTALL_DIR${N}]\tSet install directory [${E}Ex: abucus nmbi p /usr/local${N}]"
 	say "[${G} v V ${N}] [${G}ARCHIVE_DIR${N}]\tSet archive directory [${E}Ex: abucus a v /home/knuxyl/archives${N}]"
 	say "${W}Current Variables:${N}"
-	say "[${G}ABUCUS_DIR${N}]\t\t${ABUCUS_DIR}"
-	say "[${G}ABUCUS_SCRIPT${N}]\t\t${ABUCUS_SCRIPT}"
-	say "[${G}ABUCUS_CONF${N}]\t\t${ABUCUS_CONF}"
+	say "[${G}ABUCUS_EDITOR${N}]\t\t${ABUCUS_EDITOR}"
 	say "[${G}ABUCUS_PROJECTS_DIR${N}]\t${ABUCUS_PROJECTS_DIR}"
 	say "[${G}ABUCUS_INSTALL_DIR${N}]\t${ABUCUS_INSTALL_DIR}"
 	say "[${G}ABUCUS_ARCHIVE_DIR${N}]\t${ABUCUS_ARCHIVE_DIR}"
 	say "[${G}INSTALL_DIR${N}]\t\t${INSTALL_DIR}"
 	say "[${G}CUSTOM_VAR${N}]\t\t${CUSTOM_VAR}"
 	say "[${G}BUILD_TYPE${N}]\t\t${BUILD_TYPE}"
+	exit 0
 }
 create_directories() {
 	directories=("${ABUCUS_HOME}" "${ABUCUS_PROJECTS_DIR}" "${INSTALL_DIR}/bin" "${INSTALL_DIR}/include" "${INSTALL_DIR}/lib" "${INSTALL_DIR}/lib64" "${ABUCUS_INSTALL_DIR}/bin" "${ABUCUS_INSTALL_DIR}/include" "${ABUCUS_INSTALL_DIR}/lib" "${ABUCUS_INSTALL_DIR}/lib64" "${ABUCUS_ARCHIVE_DIR}")
