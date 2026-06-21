@@ -16,3 +16,7 @@ Abucus auto updates scripts except the clean, configure, build, install, and run
 It's just a simple git management system I created for cloning git projects and keeping them organized.
 
 Zstd is required for archiving projects, you can change this in the template archive function and the check dependencies in the template and abucus. The template is the escaped string in abucus.
+
+I didn't create this for anyone else so it's probably not doing what you want. It creates a template using cmake/meson and ninja to configure and build a project. you just do
+abucus c https://gitrepo.git
+abucus nmb reponame
