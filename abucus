@@ -17,8 +17,8 @@ set_variables() {
 	export ABUCUS_ARCHIVE_DIR="${ARCHIVE_DIR:-${ABUCUS_DIR}/archive}"
 	BUILD_TYPE="${BUILD_TYPE:-Release}"
 	CUSTOM_VAR="${CUSTOM_VAR:-${OS}}"
-	local file_managers=("nautilus" "dolphin" "thunar" "nemo" "caja" "pcmanfm" "pcmanfm-qt")
-	for i in "${file_managers[@]}"; do
+	local file_managers="nautilus dolphin thunar nemo caja pcmanfm pcmanfm-qt"
+	for i in ${file_managers}; do
 		if [[ "$(command -v "${i}")" ]]; then
 			ABUCUS_FM="$(command -v "${i}")"
 			break
@@ -34,13 +34,22 @@ set_variables() {
 			say "${R}Cannot get root access${N}"
 		fi
 	fi
-	export ABUCUS_LOGO=
 }
 setup_project() {
-	directories=("${PROJECT_DIR}/home.${PROJECT_NAME}" "${PROJECT_DIR}/build.${PROJECT_NAME}" "${PROJECT_DIR}/files.${PROJECT_NAME}" "${PROJECT_DIR}/install.${PROJECT_NAME}/bin" "${PROJECT_DIR}/install.${PROJECT_NAME}/include" "${PROJECT_DIR}/install.${PROJECT_NAME}/lib" "${PROJECT_DIR}/install.${PROJECT_NAME}/lib64" "${PROJECT_DIR}/archive.${PROJECT_NAME}")
-	for i in "${directories[@]}"; do
+	local IFS='
+'
+	directories="${PROJECT_DIR}/home.${PROJECT_NAME}
+${PROJECT_DIR}/build.${PROJECT_NAME}
+${PROJECT_DIR}/files.${PROJECT_NAME}
+${PROJECT_DIR}/install.${PROJECT_NAME}/bin
+${PROJECT_DIR}/install.${PROJECT_NAME}/include
+${PROJECT_DIR}/install.${PROJECT_NAME}/lib
+${PROJECT_DIR}/install.${PROJECT_NAME}/lib64
+${PROJECT_DIR}/archive.${PROJECT_NAME}"
+	for i in ${directories}; do
 		make_directory "${i}"
 	done
+	unset IFS
 	if [[ ! -f "${PROJECT_SCRIPT}" ]]; then
 		printf '%s' "#!/bin/bash
 # Abucus ${ABUCUS_VERSION}
@@ -237,13 +246,13 @@ run_abucus() {
 	fi
 	if [[ \"\${ABUCUS}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Running dependencies\${N}\"
+		say \"\${W}Running dependencies\${N} [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		abucus_dependencies
 	fi
 	if [[ \"\${CLEAN_SCRIPTS}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Cleaning old scripts\${N} [\${R}\${LOCAL_ARCHIVE_DIR}/script*.sh\${N}]\"
+		say \"\${W}Cleaning old scripts\${N} [\${R}\${LOCAL_ARCHIVE_DIR}/script*.sh\${N}] [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		clean_scripts
 	fi
@@ -253,7 +262,7 @@ run_abucus() {
 			exit 1
 		fi
 		say \"------------------------------------------------------------\"
-		say \"\${W}Opening\${N} [\${G}\${PROJECT_DIR}\${N}] with [\${G}\${ABUCUS_FM}\${N}]\"
+		say \"\${W}Opening\${N} [\${G}\${PROJECT_DIR}\${N}] with [\${G}\${ABUCUS_FM}\${N}] [\${G}\${PROJECT_NAME}\${N}]\"
 		\"\${ABUCUS_FM}\" \"\${PROJECT_DIR}\" &
 		say \"------------------------------------------------------------\"
 	fi
@@ -263,61 +272,61 @@ run_abucus() {
 			exit 1
 		fi
 		say \"------------------------------------------------------------\"
-		say \"\${W}Editing\${N} [\${G}\${PROJECT_SCRIPT}\${N}] with [\${G}\${ABUCUS_EDITOR}\${N}]\"
+		say \"\${W}Editing\${N} [\${G}\${PROJECT_SCRIPT}\${N}] with [\${G}\${ABUCUS_EDITOR}\${N}] [\${G}\${PROJECT_NAME}\${N}]\"
 		\"\${ABUCUS_EDITOR}\" \"\${PROJECT_SCRIPT}\"
 		say \"------------------------------------------------------------\"
 	fi
 	if [[ \"\${CLONE}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Cloning\${N} [\${G}\${PROJECT_URL}\${N}]\"
+		say \"\${W}Cloning\${N} [\${G}\${PROJECT_URL}\${N}] [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		clone_project
 	fi
 	if [[ \"\${UPDATE}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Updating\${N}\"
+		say \"\${W}Updating\${N} [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		update_project
 	fi
 	if [[ \"\${DEPEND}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Installing dependencies\${N} for [\${G}\${OS}\${N}]\"
+		say \"\${W}Installing dependencies\${N} for [\${G}\${OS}\${N}] [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		dependencies
 	fi
 	if [[ \"\${CLEAN}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Cleaning\${N}\"
+		say \"\${W}Cleaning\${N} [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		clean_project
 	fi
 	if [[ \"\${CONFIGURE}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Configuring\${N}\"
+		say \"\${W}Configuring\${N} [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		configure_project
 	fi
 	if [[ \"\${BUILD}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Building\${N}\"
+		say \"\${W}Building\${N} [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		build_project
 	fi
 	if [[ \"\${INSTALL}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Installing\${N} to [\${G}\${INSTALL_DIR}\${N}]\"
+		say \"\${W}Installing\${N} to [\${G}\${INSTALL_DIR}\${N}] [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		install_project
 	fi
 	if [[ \"\${RUN}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Running\${N}\"
+		say \"\${W}Running\${N} [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		run_project
 	fi
 	if [[ \"\${ARCHIVE}\" ]]; then
 		say \"------------------------------------------------------------\"
-		say \"\${W}Archiving\${N} to [\${G}\${ARCHIVE_DIR}\${N}]\"
+		say \"\${W}Archiving\${N} to [\${G}\${ARCHIVE_DIR}\${N}] [\${G}\${PROJECT_NAME}\${N}]\"
 		say \"------------------------------------------------------------\"
 		archive_project
 	fi
@@ -532,6 +541,8 @@ update_script() {
 	fi
 }
 run_abucus() {
+	local IFS='
+'
 	say "------------------------------------------------------------"
 	say "${W}Abucus Version:${N} ${E}shasum${N} [${G}${ABUCUS_VERSION}${N}]"
 	say "${W}${ABUCUS_SCRIPT}${N}"
@@ -564,8 +575,8 @@ run_abucus() {
 	if [[ ! "${COMMANDS}" ]]; then
 		exit 0
 	fi
-	if [[ "${PROJECTS[0]}" ]]; then
-		for PROJECT_NAME in "${PROJECTS[@]}"; do
+	if [[ "${PROJECTS}" != "" ]]; then
+		for PROJECT_NAME in ${PROJECTS}; do
 			if [[ "${BRANCH}" != 0 ]]; then
 				BRANCH_NAME=".${BRANCH}"
 			else
@@ -586,7 +597,7 @@ run_abucus() {
 				PROJECT_NAME="$(sanitize "${PROJECT_NAME}")"
 			else
 				if [[ ! "${COMMANDS}" =~ .*[cC].* ]]; then
-					local MATCHED_PROJECTS=()
+					local MATCHED_PROJECTS=""
 					local count=0
 					say "${W}Matching Projects:${N}"
 					for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
@@ -596,19 +607,21 @@ run_abucus() {
 						local name_check="$(characters "${project_name}")"
 						if [[ "${dir_check}" == *"${name_check}"* ]]; then
 							say "[${G} ${count}${N} ]\t$(basename "${PROJECT_DIR}")"
-							MATCHED_PROJECTS+=("${project_dir}")
+							MATCHED_PROJECTS="${MATCHED_PROJECTS}
+${project_dir}"
 							count=$((count + 1))
 						fi
 					done
 				fi
-				if [[ ! "${MATCHED_PROJECTS[0]}" ]]; then
+				MATCHED_PROJECTS="$(echo "${MATCHED_PROJECTS}" | sed '/^$/d')"
+				if [[ "${MATCHED_PROJECTS}" == "" ]]; then
 					say "${R}No projects found matching [${PROJECT_NAME}]${N}"
 					exit 1
 				fi
 				local prompt=$(say "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}]: ${N}")
 				read -p "${prompt}" p
 				if [[ "${p}" =~ [0-9]+ ]]; then
-					PROJECT_NAME="${MATCHED_PROJECTS["${p}"]}"
+					PROJECT_NAME="$(echo "${MATCHED_PROJECTS}" | sed -n "$((p + 1))"p)"
 					PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
 				else
 					say "${R}Invalid selection${N} (${P}${p}${N})"
@@ -624,7 +637,7 @@ run_abucus() {
 		done
 	else
 		say "${W}Projects:${N}"
-		local PROJECTS=()
+		local PROJECTS=""
 		local total_count=-1
 		for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
 			total_count=$((total_count + 1))
@@ -639,18 +652,20 @@ run_abucus() {
 			fi
 			PROJECT_NAME="${PROJECT_DIR##*/}"
 			say "[${G} ${count}${N} ]\t${PROJECT_NAME}"
-			PROJECTS+=("${PROJECT_NAME}")
+			PROJECTS="${PROJECTS}
+${PROJECT_NAME}"
 			count=$((count + 1))
 		done
-		if [[ ! "${PROJECTS[0]}" ]]; then
+		PROJECTS="$(echo "${PROJECTS}" | sed '/^$/d')"
+		if [[ "${PROJECTS}" == "" ]]; then
 			say "${R}No projects found${N}"
 			exit 1
 		fi
 		say "[${G} a A ${N}]\tAll Projects"
 		local prompt=$(say "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}][${N}${G} a A ${N}${W}]: ${N}")
 		read -p "${prompt}" p
-		PROJECT_NAME="${PROJECTS["${p}"]}"
 		if [[ "${p}" =~ [0-9]+ ]]; then
+			PROJECT_NAME="$(echo "${PROJECTS}" | sed -n "$((p + 1))"p)"
 			PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
 			PROJECT_SCRIPT="${PROJECT_DIR}/script.${PROJECT_NAME}.sh"
 			setup_project
@@ -658,7 +673,7 @@ run_abucus() {
 			say "${W}Running${N}\t[${G}${PROJECT_SCRIPT}${N}] "
 			bash "${PROJECT_SCRIPT}" "${COMMANDS}" o "${BRANCH}" p "${INSTALL_DIR}" g "${CUSTOM_VAR}" v "${ABUCUS_ARCHIVE_DIR}"
 		elif [[ "${p}" == [aA] ]]; then
-			for PROJECT_NAME in "${PROJECTS[@]}"; do
+			for PROJECT_NAME in ${PROJECTS}; do
 				PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
 				PROJECT_SCRIPT="${PROJECT_DIR}/script.${PROJECT_NAME}.sh"
 				setup_project
@@ -686,11 +701,13 @@ colors() {
 	N="$(tput sgr0)"
 }
 parse_arguments() {
+	local IFS='
+'
 	if [[ ! "${COMMANDS}" ]]; then
 		print_usage
 		exit 0
 	fi
-	PROJECTS=()
+	PROJECTS=""
 	for (( i=0; i<${#COMMANDS}; i++ )); do
 		arg="${COMMANDS:${i}:1}"
 		case "${arg}" in
@@ -711,9 +728,11 @@ parse_arguments() {
 			[pP]) INSTALL_DIR="${2}"; shift 2;;
 			[vV]) ARCHIVE_DIR="${2}"; shift 2;;
 			[sS]) ABUCUS_PROJECTS_DIR="${ABUCUS_DIR}/${2##*/}"; shift 2;;
-			*) PROJECTS+=("${1}"); shift;;
+			*) PROJECTS+="${PROJECTS}
+${1}"; shift;;
 		esac
 	done
+	PROJECT="$(echo "${PROJECTS}" | sed '/^$/d')"
 	if [[ ! "${BRANCH}" ]]; then
 		BRANCH=0
 	fi
@@ -771,8 +790,20 @@ print_usage() {
 	exit 0
 }
 create_directories() {
-	directories=("${ABUCUS_HOME}" "${ABUCUS_PROJECTS_DIR}" "${INSTALL_DIR}/bin" "${INSTALL_DIR}/include" "${INSTALL_DIR}/lib" "${INSTALL_DIR}/lib64" "${ABUCUS_INSTALL_DIR}/bin" "${ABUCUS_INSTALL_DIR}/include" "${ABUCUS_INSTALL_DIR}/lib" "${ABUCUS_INSTALL_DIR}/lib64" "${ABUCUS_ARCHIVE_DIR}")
-	for i in "${directories[@]}"; do
+	local IFS='
+'
+	directories="${ABUCUS_HOME}
+${ABUCUS_PROJECTS_DIR}
+${INSTALL_DIR}/bin
+${INSTALL_DIR}/include
+${INSTALL_DIR}/lib
+${INSTALL_DIR}/lib64
+${ABUCUS_INSTALL_DIR}/bin
+${ABUCUS_INSTALL_DIR}/include
+${ABUCUS_INSTALL_DIR}/lib
+${ABUCUS_INSTALL_DIR}/lib64
+${ABUCUS_ARCHIVE_DIR}"
+	for i in ${directories}; do
 		make_directory "${i}"
 	done
 }
@@ -813,8 +844,9 @@ make_directory() {
 	fi
 }
 check_dependencies() {
-	abucus_dependencies=("sed" "grep" "git" "shasum" "ninja" "cmake" "cut" "dirname" "basename" "nproc" "cut" "echo" "stat" "printf" "ls" "cd" "date" "tar" "zstd")
-	for i in "${abucus_dependencies[@]}"; do
+	local IFS=' '
+	abucus_dependencies="sed grep git shasum ninja cmake cut dirname basename nproc cut echo stat printf ls cd date tar zstd"
+	for i in ${abucus_dependencies}; do
 		if [[ ! "$(command -v "${i}")" ]]; then
 			say "${R}Missing ${i}${N}"
 			exit 1
