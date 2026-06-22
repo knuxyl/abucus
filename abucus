@@ -160,8 +160,22 @@ make_directory() {
 	fi
 }
 project_directories() {
-	directories=(\"\${HOME_DIR}\" \"\${BUILD_DIR}\" \"\${FILES_DIR}\" \"\${INSTALL_DIR}/bin\" \"\${INSTALL_DIR}/include\" \"\${INSTALL_DIR}/lib\" \"\${INSTALL_DIR}/lib64\" \"\${LOCAL_INSTALL_DIR}/bin\" \"\${LOCAL_INSTALL_DIR}/include\" \"\${LOCAL_INSTALL_DIR}/lib\" \"\${LOCAL_INSTALL_DIR}/lib64\" \"\${ARCHIVE_DIR}\" \"\${LOCAL_ARCHIVE_DIR}\")
-	for i in \"\${directories[@]}\"; do
+	local IFS='
+'
+	directories=\"\${HOME_DIR}
+\${BUILD_DIR}
+\${FILES_DIR}
+\${INSTALL_DIR}/bin
+\${INSTALL_DIR}/include
+\${INSTALL_DIR}/lib
+\${INSTALL_DIR}/lib64
+\${LOCAL_INSTALL_DIR}/bin
+\${LOCAL_INSTALL_DIR}/include
+\${LOCAL_INSTALL_DIR}/lib
+\${LOCAL_INSTALL_DIR}/lib64
+\${ARCHIVE_DIR}
+\${LOCAL_ARCHIVE_DIR}\"
+	for i in \${directories}; do
 		make_directory \"\${i}\"
 	done
 }
@@ -200,8 +214,8 @@ set_variables() {
 	CUSTOM_VAR=\"\${CUSTOM_VAR:-\${OS}}\"
 	BUILD_TYPE=\"\${BUILD_TYPE:-Release}\"
 	ABUCUS_EDITOR=\"\${ABUCUS_EDITOR:-\$(command -v nano)}\"
-	local file_managers=(\"nautilus\" \"dolphin\" \"thunar\" \"nemo\" \"caja\" \"pcmanfm\" \"pcmanfm-qt\")
-	for i in \"\${file_managers[@]}\"; do
+	local file_managers=\"nautilus dolphin thunar nemo caja pcmanfm pcmanfm-qt\"
+	for i in \${file_managers}; do
 		if [[ \"\$(command -v \"\${i}\")\" ]]; then
 			ABUCUS_FM=\"\$(command -v \"\${i}\")\"
 			break
