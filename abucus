@@ -39,7 +39,6 @@ set_variables() {
    _ \    __ \   |   |  |      |   | \___ \ 
   ___ \   |   |  |   |  |      |   |       |
 _/    _\ ____/  \___/  \____| \___/  _____/ 
-${ABUCUS_SCRIPT}
 ${W}Abucus Version:${N} ${E}shasum${N} [${G}${ABUCUS_VERSION}${N}]
 ------------------------------------------------------------"
 }
@@ -229,7 +228,6 @@ set_variables() {
    _ \    __ \   |   |  |      |   | \___ \ 
   ___ \   |   |  |   |  |      |   |       |
 _/    _\ ____/  \___/  \____| \___/  _____/
-[\${PROJECT_SCRIPT}]
 \${W}\${PROJECT_NAME}:\${N} [\${G}\${PROJECT_URL}\${N}]
 \${W}Abucus Version:\${N} \${E}shasum\${N} [\${G}\${ABUCUS_VERSION}\${N}]
 \${W}Source Version:\${N} \${E}commit\${N} [\${G}\${SRC_VERSION}\${N}]
@@ -237,7 +235,7 @@ _/    _\ ____/  \___/  \____| \___/  _____/
 }
 run_abucus() {
 	say \"\${ABUCUS_LOGO}\"
-	say \"\${W}Usage:\${N}\t\tabucus [\${G}command(s)\${N}] [\${G}option(s)\${N}|\${G}project(s)\${N}]\"
+	say \"\${W}\${PROJECT_SCRIPT}\${N}\"
 	say \"\${W}Command:\${N}\t[\${G}abucus \${ARGUMENTS}\${N}]\"
 	say \"\${W}Current Variables:\${N}\"
 	say \"[\${G}BUILD_TYPE\${N}]\t\t\${BUILD_TYPE}\"
@@ -732,6 +730,7 @@ say() {
 }
 print_usage() {
 	say "${ABUCUS_LOGO}"
+	say "${W}${ABUCUS_SCRIPT}${N}"
 	say "${W}Usage:${N}\tabucus [${G}command(s)${N}] [${G}option(s)${N}|${G}project(s)${N}]"
 	say "${W}Commands:${N} [${E}Commands execute in this order${N}]"
 	say "[${G} h H ${N}]\tPrint this information"
