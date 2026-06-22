@@ -636,13 +636,13 @@ ${project_dir}"
 				read -p "${prompt}" p
 				if [[ "${p}" =~ [0-9]+ ]]; then
 					PROJECT_NAME="$(echo "${MATCHED_PROJECTS}" | sed -n "$((p + 1))"p)"
-					PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
 				else
 					say "${R}Invalid selection${N} (${P}${p}${N})"
 					print_usage
 					exit 1
 				fi
 			fi
+			PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
 			PROJECT_SCRIPT="${PROJECT_DIR}/script.${PROJECT_NAME}.sh"
 			setup_project
 			update_script
