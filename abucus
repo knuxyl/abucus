@@ -229,7 +229,7 @@ set_variables() {
    _ \    __ \   |   |  |      |   | \___ \ 
   ___ \   |   |  |   |  |      |   |       |
 _/    _\ ____/  \___/  \____| \___/  _____/
-\${PROJECT_SCRIPT}
+[\${PROJECT_SCRIPT}]
 \${W}\${PROJECT_NAME}:\${N} [\${G}\${PROJECT_URL}\${N}]
 \${W}Abucus Version:\${N} \${E}shasum\${N} [\${G}\${ABUCUS_VERSION}\${N}]
 \${W}Source Version:\${N} \${E}commit\${N} [\${G}\${SRC_VERSION}\${N}]
@@ -508,7 +508,7 @@ characters() {
 	echo "${1}" | sed 's/[^a-zA-Z0-9]//g'
 }
 sanitize() {
-	echo "${1}" | sed 's/[<>:"\/\\|?*]//g' | sed 's/[[:cntrl:]]//g'
+	echo "${1}" | sed 's/[<>:"\/\\|?*]//g' | sed 's/[[:cntrl:]]//g' | tr '[[:upper:]]' '[[:lower:]]'
 }
 update_script() {
 	SCRIPT_VERSION="$(grep "^ABUCUS_VERSION=" "${PROJECT_SCRIPT}" | cut -f 2 -d '"')"
@@ -588,31 +588,32 @@ run_abucus() {
 				else
 					PROJECT_NAME="${PROJECT_NAME##*/}${BRANCH_NAME}"
 				fi
-			fi
-			PROJECT_NAME="$(sanitize "${PROJECT_NAME}")"
-			PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
-			if [[ ! "${COMMANDS}" =~ .*[cC].* ]]; then
-				local PROJECTS=()
-				local count=0
-				say "${W}Matching Projects:${N}"
-				for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
-					local project_dir="$(characters "$(echo "${PROJECT_DIR}" | tr '[[:upper:]]' '[[:lower:]]')")"
-					local project_name="$(characters "$(echo "${PROJECT_NAME}" | tr '[[:upper:]]' '[[:lower:]]')")"
-					if [[ "${project_dir}" =~ "${project_name}" ]]; then
-						PROJECT_NAME="${PROJECT_DIR##*/}"
-						say "[${G} ${count}${N} ]\t${PROJECT_NAME}"
-						PROJECTS+=("${PROJECT_NAME}")
-						count=$((count + 1))
-					fi
-				done
-				if [[ ! "${PROJECTS[0]}" ]]; then
+				PROJECT_NAME="$(sanitize "${PROJECT_NAME}")"
+			else
+				if [[ ! "${COMMANDS}" =~ .*[cC].* ]]; then
+					local MATCHED_PROJECTS=()
+					local count=0
+					say "${W}Matching Projects:${N}"
+					for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
+						local project_dir="$(basename "${PROJECT_DIR}")"
+						local project_name="$(sanitize "${PROJECT_NAME}")"
+						local dir_check="$(characters "${project_dir}" | tr '[[:upper:]]' '[[:lower:]]')"
+						local name_check="$(characters "${project_name}")"
+						if [[ "${dir_check}" == *"${name_check}"* ]]; then
+							say "[${G} ${count}${N} ]\t$(basename "${PROJECT_DIR}")"
+							MATCHED_PROJECTS+=("${project_dir}")
+							count=$((count + 1))
+						fi
+					done
+				fi
+				if [[ ! "${MATCHED_PROJECTS[0]}" ]]; then
 					say "${R}No projects found matching [${PROJECT_NAME}]${N}"
 					exit 1
 				fi
 				local prompt=$(say "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}]: ${N}")
 				read -p "${prompt}" p
 				if [[ "${p}" =~ [0-9]+ ]]; then
-					PROJECT_NAME="${PROJECTS["${p}"]}"
+					PROJECT_NAME="${MATCHED_PROJECTS["${p}"]}"
 					PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
 				else
 					say "${R}Invalid selection${N} (${P}${p}${N})"
