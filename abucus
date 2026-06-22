@@ -438,8 +438,8 @@ ABUCUS_VERSION=\"${ABUCUS_VERSION}\"
 ARGUMENTS=\"\${@}\"
 COMMANDS=\"\${1}\"
 colors
-set_variables
 check_dependencies
+set_variables
 parse_arguments \"\${@}\"
 project_directories
 run_abucus
@@ -504,6 +504,9 @@ dependency_project="	emerge_deps=\"\"
 		deps=\"\${zypper_deps/>/\\>}\"
 		\"\${ADMIN[@]}\" zypper install \${deps}
 	fi"
+characters() {
+	echo "${1}" | sed 's/[^a-zA-Z0-9]//g'
+}
 sanitize() {
 	echo "${1}" | sed 's/[<>:"\/\\|?*]//g' | sed 's/[[:cntrl:]]//g'
 }
@@ -527,8 +530,8 @@ update_script() {
 		configure_function="$(sed -n '/^configure_project()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
 		install_function="$(sed -n '/^install_project()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
 		run_function="$(sed -n '/^run_project()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
-		#abucus_function="$(sed -n '/^abucus_dependencies()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
-		#dependency_function="$(sed -n '/^dependencies()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
+		abucus_function="$(sed -n '/^abucus_dependencies()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
+		dependency_function="$(sed -n '/^dependencies()[[:space:]]*{/,/^}$/p' "${PROJECT_SCRIPT}" | sed '1d;$d')"
 		PROJECT_URL="$(grep -m1 "^PROJECT_URL=" "${PROJECT_SCRIPT}" | cut -f 2 -d '"')"
 		PROJECT_NOTES="$(grep -m1 "^PROJECT_NOTES=" "${PROJECT_SCRIPT}" | cut -f 2 -d '"')"
 		local count=0
@@ -589,8 +592,31 @@ run_abucus() {
 			PROJECT_NAME="$(sanitize "${PROJECT_NAME}")"
 			PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
 			if [[ ! "${COMMANDS}" =~ .*[cC].* ]]; then
-				if [[ ! -d "${PROJECT_DIR}" ]]; then
-					say "[${G} ${PROJECT_NAME} ${N}] ${R}does not exist${N}"
+				local PROJECTS=()
+				local count=0
+				say "${W}Matching Projects:${N}"
+				for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
+					local project_dir="$(characters "$(echo "${PROJECT_DIR}" | tr '[[:upper:]]' '[[:lower:]]')")"
+					local project_name="$(characters "$(echo "${PROJECT_NAME}" | tr '[[:upper:]]' '[[:lower:]]')")"
+					if [[ "${project_dir}" =~ "${project_name}" ]]; then
+						PROJECT_NAME="${PROJECT_DIR##*/}"
+						say "[${G} ${count}${N} ]\t${PROJECT_NAME}"
+						PROJECTS+=("${PROJECT_NAME}")
+						count=$((count + 1))
+					fi
+				done
+				if [[ ! "${PROJECTS[0]}" ]]; then
+					say "${R}No projects found matching [${PROJECT_NAME}]${N}"
+					exit 1
+				fi
+				local prompt=$(say "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}]: ${N}")
+				read -p "${prompt}" p
+				if [[ "${p}" =~ [0-9]+ ]]; then
+					PROJECT_NAME="${PROJECTS["${p}"]}"
+					PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
+				else
+					say "${R}Invalid selection${N} (${P}${p}${N})"
+					print_usage
 					exit 1
 				fi
 			fi
@@ -602,13 +628,13 @@ run_abucus() {
 		done
 	else
 		say "${W}Projects:${N}"
-		PROJECTS=()
-		total_count=-1
+		local PROJECTS=()
+		local total_count=-1
 		for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
 			total_count=$((total_count + 1))
 		done
 		par_len="${#total_count}"
-		count=0
+		local count=0
 		for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
 			count=$(printf "%${par_len}d" "${count}")
 			if [[ ! -d "${PROJECT_DIR}" ]]; then
@@ -678,6 +704,7 @@ parse_arguments() {
 			[xX]) "${ABUCUS_EDITOR}" "${ABUCUS_CONF}";;
 			[zZ]) BUILD_TYPE="Debug";;
 			[tT]) INSTALL_DIR="${ABUCUS_INSTALL_DIR}";;
+			
 		esac
 	done
 	shift
@@ -687,6 +714,7 @@ parse_arguments() {
 			[gG]) CUSTOM_VAR="${2}"; shift 2;;
 			[pP]) INSTALL_DIR="${2}"; shift 2;;
 			[vV]) ARCHIVE_DIR="${2}"; shift 2;;
+			[sS]) ABUCUS_PROJECTS_DIR="${ABUCUS_DIR}/${2##*/}"; shift 2;;
 			*) PROJECTS+=("${1}"); shift;;
 		esac
 	done
@@ -727,11 +755,13 @@ print_usage() {
 	say "[${G} a A ${N}]\tArchive project [${G}ABUCUS_ARCHIVE_DIR${N}] [${E}Archive project with tar and zstd${N}]"
 	say "[${G} k K ${N}]\tRun commands against project's abucus dependencies recursively [${E}Does not pass BRANCH${N}]"
 	say "${W}Options:${N}"
-	say "[${G} o O ${N}] [${G}BRANCH${N}]\tSet git branch [${W}Default:${N} ${G}master${N}] [${E}Ex: abucus c o beta${N}]"
-	say "[${G} g G ${N}] [${G}CUSTOM_VAR${N}]\tSet custom variable [${W}Default:${N} ${G}${OS}${N}] [${E}Ex: abucus b g testing${N}]"
-	say "[${G} p P ${N}] [${G}INSTALL_DIR${N}]\tSet install directory [${E}Ex: abucus nmbi p /usr/local${N}]"
-	say "[${G} v V ${N}] [${G}ARCHIVE_DIR${N}]\tSet archive directory [${E}Ex: abucus a v /home/knuxyl/archives${N}]"
+	say "[${G} o O ${N}] [${G}BRANCH${N}]\t\tSet git branch [${W}Default:${N} ${G}master${N}] [${E}Ex: abucus c o beta${N}]"
+	say "[${G} g G ${N}] [${G}CUSTOM_VAR${N}]\t\tSet custom variable [${W}Default:${N} ${G}${OS}${N}] [${E}Ex: abucus b g testing${N}]"
+	say "[${G} p P ${N}] [${G}INSTALL_DIR${N}]\t\tSet install directory [${E}Ex: abucus nmbi p /usr/local${N}]"
+	say "[${G} v V ${N}] [${G}ARCHIVE_DIR${N}]\t\tSet archive directory [${E}Ex: abucus a v /home/knuxyl/archives${N}]"
+	say "[${G} s S ${N}] [${G}ABUCUS_PROJECTS_DIR${N}]\tSet project directory [${W}Folder inside ABUCUS_DIR${N}]"
 	say "${W}Current Variables:${N}"
+	say "[${G}ABUCUS_FM${N}\t\t${ABUCUS_FM}"
 	say "[${G}ABUCUS_EDITOR${N}]\t\t${ABUCUS_EDITOR}"
 	say "[${G}ABUCUS_PROJECTS_DIR${N}]\t${ABUCUS_PROJECTS_DIR}"
 	say "[${G}ABUCUS_INSTALL_DIR${N}]\t${ABUCUS_INSTALL_DIR}"
@@ -798,6 +828,6 @@ export HOME="${ABUCUS_HOME}"
 colors
 check_dependencies
 set_variables
-create_directories
 parse_arguments "${@}"
+create_directories
 run_abucus
