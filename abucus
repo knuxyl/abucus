@@ -209,8 +209,8 @@ set_variables() {
 	BUILD_DIR=\"\${PROJECT_DIR}/build.\${PROJECT_NAME}\"
 	INSTALL_DIR=\"\${INSTALL_DIR:-/usr}\"
 	LOCAL_INSTALL_DIR=\"\${PROJECT_DIR}/install.\${PROJECT_NAME}\"
-	ARCHIVE_DIR=\"\${ARCHIVE_DIR:-\${PROJECT_DIR}/archive.\${PROJECT_NAME}}\"
 	LOCAL_ARCHIVE_DIR=\"\${PROJECT_DIR}/archive.\${PROJECT_NAME}\"
+	ARCHIVE_DIR=\"\${ARCHIVE_DIR:-\${LOCAL_ARCHIVE_DIR}}\"
 	CUSTOM_VAR=\"\${CUSTOM_VAR:-\${OS}}\"
 	BUILD_TYPE=\"\${BUILD_TYPE:-Release}\"
 	ABUCUS_EDITOR=\"\${ABUCUS_EDITOR:-\$(command -v nano)}\"
@@ -383,7 +383,7 @@ print_usage() {
 	say \"[\${G}BRANCH\${N}]\t\t\${BRANCH}\"
 	say \"[\${G}CUSTOM_VAR\${N}]\t\t\${CUSTOM_VAR}\"
 	say \"[\${G}INSTALL_DIR\${N}]\t\t\${INSTALL_DIR}\"
-	say \"[\${G}ARCHIVE_DIR\${N}]\t\t\${ABUCUS_ARCHIVE_DIR}\"
+	say \"[\${G}ARCHIVE_DIR\${N}]\t\t\${ARCHIVE_DIR}\"
 	exit 0
 }
 parse_arguments() {
