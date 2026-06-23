@@ -726,12 +726,10 @@ parse_arguments() {
 		arg="${COMMANDS:${i}:1}"
 		case "${arg}" in
 			[hH]) HELP=1;;
-			[xX]) OPEN=1;;
 			[jJ]) "${ABUCUS_EDITOR}" "${ABUCUS_SCRIPT}";;
 			[xX]) "${ABUCUS_EDITOR}" "${ABUCUS_CONF}";;
 			[zZ]) BUILD_TYPE="Debug";;
 			[tT]) INSTALL_DIR="${ABUCUS_INSTALL_DIR}";;
-			
 		esac
 	done
 	shift
@@ -801,6 +799,8 @@ print_usage() {
 	say "[${G}INSTALL_DIR${N}]\t\t${INSTALL_DIR}"
 	say "[${G}CUSTOM_VAR${N}]\t\t${CUSTOM_VAR}"
 	say "[${G}BUILD_TYPE${N}]\t\t${BUILD_TYPE}"
+	say "${E}Project scripts are auto updated when ran from abucus.${N}"
+	say "${E}Old scripts are moved to project's ARCHIVE_DIR${N}"
 	exit 0
 }
 create_directories() {
