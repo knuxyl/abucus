@@ -79,8 +79,8 @@ clone_project() {
 		git clone --recursive --branch \"\${BRANCH}\" \"\${PROJECT_URL}\" \"\${SRC_DIR}\"
 		if [ \"\${?}\" != 0 ]; then
 			say \"\${R}Failed to clone\${N} [ \${G}\${PROJECT_URL}\${N} ]\"
-			local prompt=\"\$(say \"Try again without \${W}--recursive\${N}? [\${G}Y/n\${N}]: \")\"
-			read -p \"\${prompt}\" p
+			printf '%s' \"Try again without \${W}--recursive\${N}? [\${G}Y/n\${N}]: \"
+			read p
 			case \"\${p}\" in
 				[nN])
 					remove \"\${PROJECT_DIR}\"
@@ -98,8 +98,19 @@ clone_project() {
 		fi
 	else
 		say \"Source directory already exists\"
-		remove \"\${SRC_DIR}\"
-		clone_project
+		printf '%s' \"Delete and re-clone? [\${G}\${SRC_DIR}\${N}] [\${G}y/N\${N}]: \"
+		read p
+		case \"\${p}\" in
+			[yY])
+				remove \"\${SRC_DIR}\"
+				clone_project
+			;;
+			*)
+				say \"Project source directory already exists, skipping [\${G}SRC_DIR\${N}]\"
+				remove \"\${SRC_DIR}\"
+				clone_project
+			;;
+		esac
 	fi
 }
 update_project() {
@@ -143,11 +154,13 @@ colors() {
 	N=\"\$(tput sgr0)\"
 }
 remove() {
-	local prompt=\"\$(say \"\${W}Deleting\${N} [\${R}\${1}\${N}] Continue? [\${G}Y/n\${N}]: \")\"
+	printf '%s' \"\${W}Deleting\${N} [\${R}\${1}\${N}]\"
 	if [ -w \"\$(dirname \"\${1}\")\" ]; then
 		if [ ! \"\${2}\" ]; then
-			read -p \"\${prompt}\" p
+			printf '%s' \"Continue? [\${G}Y/n\${N}]: \" 
+			read p
 		fi
+		printf '\n'
 		if [ \"\${p}\" != [nN] ] || [ \"\${2}\" ]; then
 			rm -Rf \"\${1}\"
 		else
@@ -155,8 +168,10 @@ remove() {
 		fi
 	else
 		if [ ! \"\${2}\" ]; then
-			read -p \"\${prompt}\" p
+			printf '%s' \"Continue? [\${G}Y/n\${N}]: \" 
+			read p
 		fi
+		printf '\n'
 		if [ \"\${p}\" != [nN] ] || [ \"\${2}\" ]; then
 			\"\${ADMIN[@]}\" rm -Rf \"\${1}\"
 		else
@@ -581,6 +596,51 @@ run_abucus() {
 	say "${W}${ABUCUS_SCRIPT}${N}"
 	say "------------------------------------------------------------"
 	say "${W}Command:${N}\t[${G}abucus ${ARGUMENTS}${N}]"
+	if [ "${CHOOSE_DIR}" ]; then
+		ABUCUS_GROUPS=""
+		local total_count=-1
+		for GROUP_DIR in "${ABUCUS_GROUPS_DIR}/"*; do
+			total_count=$((total_count + 1))
+		done
+		local par_len="${#total_count}"
+		local count=0
+		say "${W}Groups:${N}"
+		for GROUP_DIR in "${ABUCUS_GROUPS_DIR}/"*; do
+			if [ ! -d "${GROUP_DIR}" ]; then
+				continue
+			fi
+			local c="$(printf "%${par_len}d" "${count}")"
+			GROUP_NAME="$(basename "${GROUP_DIR}")"
+			say "[${G} ${c} ${N}]\t${GROUP_NAME}"
+			ABUCUS_GROUPS="${ABUCUS_GROUPS}
+${GROUP_NAME}"
+			count=$((count + 1))
+		done
+		ABUCUS_GROUPS="$(echo "${ABUCUS_GROUPS}" | sed '/^$/d')"
+		if [ "${ABUCUS_GROUPS}" = "" ]; then
+			say "${R}No groups found${N}"
+			exit 1
+		fi
+		printf '%s' "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}]: ${N}"
+		read p
+		printf '\n'
+		case "${p}" in
+			''|*[!0-9]*)
+				say "${R}Invalid selection${N} (${P}${p}${N})"
+				print_usage
+				exit 1
+			;;
+			*)
+				if [ "${p}" -gt "${total_count}" ]; then
+					say "${R}Invalid selection${N} (${P}${p}${N})"
+					print_usage
+					exit 1
+				fi
+				GROUP_NAME="$(echo "${ABUCUS_GROUPS}" | sed -n "$((p + 1))"p)"
+				ABUCUS_PROJECTS_DIR="${ABUCUS_GROUPS_DIR}/${GROUP_NAME}"
+			;;
+		esac
+	fi
 	if [ "${OPEN}" ]; then
 		if [ ! "${ABUCUS_FM}" ]; then
 			say "${R}File manager not set [ABUCUS_FM]${N}"
@@ -657,8 +717,9 @@ ${project_dir}"
 							say "${R}No projects found matching [${PROJECT_NAME}]${N}"
 							exit 1
 						fi
-						local prompt=$(say "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}]: ${N}")
-						read -p "${prompt}" p
+						printf '%s' "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}]: ${N}"
+						read p
+						printf '\n'
 						case "${p}" in
 							''|*[!0-9]*)
 								say "${R}Invalid selection${N} (${P}${p}${N})"
@@ -688,25 +749,25 @@ ${project_dir}"
 		par_len="${#total_count}"
 		local count=0
 		for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
-			count=$(printf "%${par_len}d" "${count}")
+			local c=$(printf "%${par_len}d" "${count}")
 			if [ ! -d "${PROJECT_DIR}" ]; then
-				say "${R}Project directory not found${N} [${G}${PROJECT_DIR}${N}]"
 				continue
 			fi
 			PROJECT_NAME="${PROJECT_DIR##*/}"
-			say "[${G} ${count}${N} ]\t${PROJECT_NAME}"
+			say "[ ${G}${c}${N} ]\t${PROJECT_NAME}"
 			PROJECTS="${PROJECTS}
 ${PROJECT_NAME}"
 			count=$((count + 1))
 		done
 		PROJECTS="$(echo "${PROJECTS}" | sed '/^$/d')"
-		if [ "${PROJECTS}" == "" ]; then
+		if [ "${PROJECTS}" = "" ]; then
 			say "${R}No projects found${N}"
 			exit 1
 		fi
 		say "[${G} a A ${N}]\tAll Projects"
-		local prompt=$(say "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}][${N}${G} a A ${N}${W}]: ${N}")
-		read -p "${prompt}" p
+		printf '%s' "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}][${N}${G} a A ${N}${W}]: ${N}"
+		read p
+		printf '\n'
 		case "${p}" in
 			[aA])
 				for PROJECT_NAME in ${PROJECTS}; do
@@ -768,6 +829,7 @@ parse_arguments() {
 			[xX]) "${ABUCUS_EDITOR}" "${ABUCUS_CONF}";;
 			[zZ]) BUILD_TYPE="Debug";;
 			[tT]) INSTALL_DIR="${ABUCUS_INSTALL_DIR}";;
+			[wW]) CHOOSE_DIR=1;;
 		esac
 	done
 	shift
@@ -789,7 +851,7 @@ ${1}"; shift;;
 	if [ "${HELP}" ]; then
 		print_usage
 	fi
-	COMMANDS=$(echo "${COMMANDS}" | tr -d 't' | tr -d 'T' | tr -d 's' | tr -d 'S' | tr -d 'j' | tr -d 'J' | tr -d 'x' | tr -d 'X')
+	COMMANDS=$(echo "${COMMANDS}" | tr -d 't' | tr -d 'T' | tr -d 's' | tr -d 'S' | tr -d 'j' | tr -d 'J' | tr -d 'x' | tr -d 'X' | tr -d 'w' | tr -d 'W')
 }
 say() {
     printf '%b\n' "$*"
@@ -821,6 +883,7 @@ print_usage() {
 	say "[${G} i I ${N}]\tInstall project [${G}INSTALL_DIR${N}] [${E}User defined, defaults to ninja${N}]"
 	say "[${G} r R ${N}]\tRun project [${E}User defined, defaults to set home directory to local directory${N}]"
 	say "[${G} a A ${N}]\tArchive project [${G}ABUCUS_ARCHIVE_DIR${N}] [${E}Archive project with tar and zstd${N}]"
+	say "[${G} w W ${N}]\tChoose from a list of groups to set [${G}ABUCUS_PROJECTS_DIR${N}]"
 	say "[${G} k K ${N}]\tRun commands against project's abucus dependencies recursively [${E}Does not pass BRANCH${N}]"
 	say "${W}Options:${N}"
 	say "[${G} o O ${N}] [${G}BRANCH${N}]\t\tSet git branch [${W}Default:${N} ${G}master${N}] [${E}Ex: abucus c o beta${N}]"
@@ -862,34 +925,28 @@ ${ABUCUS_ARCHIVE_DIR}"
 	unset IFS
 }
 remove() {
-	local prompt="$(say "${W}Deleting directory${N} [${R}${1}${N}] Continue? [${G}Y/n${N}]: ")"
+	printf '%s' "${W}Deleting${N} [${R}${1}${N}]"
 	if [ -w "$(dirname "${1}")" ]; then
 		if [ ! "${2}" ]; then
-			read -p "${prompt}" p
-			case "${p}" in
-				[nN])
-					say "${W}Skipping deletion of${N} [${G}${1}${N}]"
-				;;
-				*)
-					rm -Rf "${1}"
-				;;
-			esac
-		else
+			printf '%s' "Continue? [${G}Y/n${N}]: " 
+			read p
+		fi
+		printf '\n'
+		if [ "${p}" != [nN] ] || [ "${2}" ]; then
 			rm -Rf "${1}"
+		else
+			say "${W}Skipping deletion of${N} [${G}${1}${N}]"
 		fi
 	else
 		if [ ! "${2}" ]; then
-			read -p "${prompt}" p
-			case "${p}" in
-				[nN])
-					say "${W}Skipping deletion of${N} [${G}${1}${N}]"
-				;;
-				*)
-					"${ADMIN[@]}" rm -Rf "${1}"
-				;;
-			esac
-		else
+			printf '%s' "Continue? [${G}Y/n${N}]: " 
+			read p
+		fi
+		printf '\n'
+		if [ "${p}" != [nN] ] || [ "${2}" ]; then
 			"${ADMIN[@]}" rm -Rf "${1}"
+		else
+			say "${W}Skipping deletion of${N} [${G}${1}${N}]"
 		fi
 	fi
 }
