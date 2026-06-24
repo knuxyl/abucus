@@ -10,6 +10,7 @@ Can use a .conf file (optional) in the same directory as abucus named abucus.con
 Very simple shell script, no complicated mess. Basic grep and sed commands.
 
 Abucus creates scripts for each project cloned that is independent or can be ran from the main abucus script.
+This makes each project 100% self contained. If abucus disappears, all functionality will still be present in the project's script.
 
 Abucus auto updates scripts except the clean, configure, build, install, and run functions.
 
