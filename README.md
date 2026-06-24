@@ -12,7 +12,7 @@ Very simple shell script, no complicated mess. Basic grep and sed commands.
 Abucus creates scripts for each project cloned that is independent or can be ran from the main abucus script.
 This makes each project 100% self contained. If abucus disappears, all functionality will still be present in the project's script.
 
-Abucus auto updates scripts except the clean, configure, build, install, and run functions.
+Abucus auto updates scripts except the clean, configure, build, install, dependencies, abucus dependencies, and run functions.
 
 It's just a simple git management system I created for cloning git projects and keeping them organized.
 
