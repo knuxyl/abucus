@@ -3,11 +3,11 @@
 
 Shell script for managing, building, and running git projects
 
-Currently rewriting it be to be shell comptaible, ie no bashisms.
+Like a package manager for git projects but lacks several features such as uninstalling a project from the system.
+
+Currently rewriting it be to be posix compliant.
 
 Can use a .conf file (optional) in the same directory as abucus named abucus.conf. Can change in script.
-
-Very simple shell script, no complicated mess. Basic grep and sed commands.
 
 Abucus creates scripts for each project cloned that is independent or can be ran from the main abucus script.
 This makes each project 100% self contained. If abucus disappears, all functionality will still be present in the project's script.
