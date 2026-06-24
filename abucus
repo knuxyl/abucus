@@ -69,7 +69,7 @@ build_project() {
 ${build_function:-${build_project}}
 }
 install_project() {
-${install_function:-	${install_project}}
+${install_function:-${install_project}}
 }
 run_project() {
 ${run_function:-${run_project}}
@@ -81,6 +81,7 @@ clone_project() {
 			say \"\${R}Failed to clone\${N} [ \${G}\${PROJECT_URL}\${N} ]\"
 			printf '%s' \"Try again without \${W}--recursive\${N}? [\${G}Y/n\${N}]: \"
 			read p
+			printf '\n'
 			case \"\${p}\" in
 				[nN])
 					remove \"\${PROJECT_DIR}\"
@@ -100,6 +101,7 @@ clone_project() {
 		say \"Source directory already exists\"
 		printf '%s' \"Delete and re-clone? [\${G}\${SRC_DIR}\${N}] [\${G}y/N\${N}]: \"
 		read p
+		printf '\n'
 		case \"\${p}\" in
 			[yY])
 				remove \"\${SRC_DIR}\"
