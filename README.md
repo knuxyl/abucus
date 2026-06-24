@@ -3,7 +3,7 @@
 
 Shell script for managing, building, and running git projects
 
-Should be compatible with dash, bash, ash, and I believe anything that supports the original shell scripting language.
+Currently rewriting it be to be shell comptaible, ie no bashisms.
 
 Can use a .conf file (optional) in the same directory as abucus named abucus.conf. Can change in script.
 
