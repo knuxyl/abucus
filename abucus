@@ -634,43 +634,43 @@ run_abucus() {
 					PROJECT_NAME="$(sanitize "${PROJECT_NAME}")"
 				;;
 				*)
-					case "${COMMANDS}" in
-						*[cC]*)
-							local MATCHED_PROJECTS=""
-							local count=0
-							say "${W}Matching Projects:${N}"
-							for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
-								local project_dir="$(basename "${PROJECT_DIR}")"
-								local project_name="$(sanitize "${PROJECT_NAME}")"
-								local dir_check="$(characters "${project_dir}" | tr '[[:upper:]]' '[[:lower:]]')"
-								local name_check="$(characters "${project_name}")"
-								if [ "${dir_check}" == *"${name_check}"* ]; then
+					if [ ! -d "${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}" ]; then
+						local MATCHED_PROJECTS=""
+						local count=0
+						say "${W}Matching Projects:${N}"
+						for PROJECT_DIR in "${ABUCUS_PROJECTS_DIR}/"*; do
+							local project_dir="$(basename "${PROJECT_DIR}")"
+							local project_name="$(sanitize "${PROJECT_NAME}")"
+							local dir_check="$(characters "${project_dir}" | tr '[[:upper:]]' '[[:lower:]]')"
+							local name_check="$(characters "${project_name}")"
+							case "${dir_check}" in
+								*"${name_check}"*)
 									say "[${G} ${count}${N} ]\t$(basename "${PROJECT_DIR}")"
 									MATCHED_PROJECTS="${MATCHED_PROJECTS}
-		${project_dir}"
+${project_dir}"
 									count=$((count + 1))
-								fi
-							done
-						;;
-						*)
-							MATCHED_PROJECTS="$(echo "${MATCHED_PROJECTS}" | sed '/^$/d')"
-							if [ "${MATCHED_PROJECTS}" == "" ]; then
-								say "${R}No projects found matching [${PROJECT_NAME}]${N}"
-								exit 1
-							fi
-							local prompt=$(say "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}]: ${N}")
-							read -p "${prompt}" p
-							if [ "${p}" =~ [0-9]+ ]; then
-								PROJECT_NAME="$(echo "${MATCHED_PROJECTS}" | sed -n "$((p + 1))"p)"
-							else
+								;;
+							esac
+						done
+						MATCHED_PROJECTS="$(echo "${MATCHED_PROJECTS}" | sed '/^$/d')"
+						if [ "${MATCHED_PROJECTS}" = "" ]; then
+							say "${R}No projects found matching [${PROJECT_NAME}]${N}"
+							exit 1
+						fi
+						local prompt=$(say "${W}Choose a project [${N}${G}0-$((count - 1))${N}${W}]: ${N}")
+						read -p "${prompt}" p
+						case "${p}" in
+							''|*[!0-9]*)
 								say "${R}Invalid selection${N} (${P}${p}${N})"
 								print_usage
 								exit 1
-							fi
-						;;
-					esac
-					;;
-				esac
+							;;
+							*)
+								PROJECT_NAME="$(echo "${MATCHED_PROJECTS}" | sed -n "$((p + 1))"p)"
+							;;
+						esac
+					fi
+			esac
 			PROJECT_DIR="${ABUCUS_PROJECTS_DIR}/${PROJECT_NAME}"
 			PROJECT_SCRIPT="${PROJECT_DIR}/script.${PROJECT_NAME}.sh"
 			setup_project
@@ -718,7 +718,7 @@ ${PROJECT_NAME}"
 					bash "${PROJECT_SCRIPT}" "${COMMANDS}" o "${BRANCH}" p "${INSTALL_DIR}" g "${CUSTOM_VAR}" v "${ABUCUS_ARCHIVE_DIR}"
 				done
 			;;
-			*[!0-9]*)
+			''|*[!0-9]*)
 				say "${R}Invalid selection${N} (${P}${p}${N})"
 				print_usage
 				exit 1
