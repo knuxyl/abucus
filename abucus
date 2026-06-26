@@ -156,7 +156,7 @@ colors() {
 	N=\"\$(tput sgr0)\"
 }
 remove() {
-	printf '%s' \"\${W}Deleting\${N} [\${R}\${1}\${N}]\"
+	printf '%s' \"\${W}Deleting\${N} [\${R}\${1}\${N}] \"
 	if [ -w \"\$(dirname \"\${1}\")\" ]; then
 		if [ ! \"\${2}\" ]; then
 			printf '%s' \"Continue? [\${G}Y/n\${N}]: \" 
@@ -165,6 +165,18 @@ remove() {
 		printf '\n'
 		if [ \"\${p}\" != [nN] ] || [ \"\${2}\" ]; then
 			rm -Rf \"\${1}\"
+			if [ \"\${?}\" -ne 0 ]; then
+				printf '%s' \"\${R}Failed to delete [\${1}]\${N} Use root? [Y/n]: \"
+				read p
+				printf '\n'
+				if [ \"\${p}\" != [nN] ]; then
+					\"\${ADMIN[@]}\" rm -Rf \"\${1}\" || 
+					if [ \"\${?}\" -ne 0 ]; then
+						say \"\${R}Failed to delete [\${1}]\${N} Exiting\"
+						exit 1
+					fi
+				fi
+			fi
 		else
 			say \"\${W}Skipping deletion of\${N} [\${G}\${1}\${N}]\"
 		fi
@@ -176,6 +188,10 @@ remove() {
 		printf '\n'
 		if [ \"\${p}\" != [nN] ] || [ \"\${2}\" ]; then
 			\"\${ADMIN[@]}\" rm -Rf \"\${1}\"
+			if [ \"\${?}\" -ne 0 ]; then		
+				say \"\${R}Failed to delete [\${1}]\${N} Exiting\"
+				exit 1
+			fi
 		else
 			say \"\${W}Skipping deletion of\${N} [\${G}\${1}\${N}]\"
 		fi
@@ -912,6 +928,7 @@ create_directories() {
 '
 	local directories="${ABUCUS_HOME}
 ${ABUCUS_PROJECTS_DIR}
+${ABUCUS_GROUPS_DIR}
 ${INSTALL_DIR}/bin
 ${INSTALL_DIR}/include
 ${INSTALL_DIR}/lib
@@ -936,6 +953,18 @@ remove() {
 		printf '\n'
 		if [ "${p}" != [nN] ] || [ "${2}" ]; then
 			rm -Rf "${1}"
+			if [ "${?}" -ne 0 ]; then
+				printf '%s' "${R}Failed to delete [${1}]${N} Use root? [Y/n]: "
+				read p
+				printf '\n'
+				if [ "${p}" != [nN] ]; then
+					"${ADMIN[@]}" rm -Rf "${1}"
+					if [ "${?}" -ne 0 ]; then
+						say "${R}Failed to delete [${1}]${N} Exiting"
+						exit 1
+					fi
+				fi
+			fi
 		else
 			say "${W}Skipping deletion of${N} [${G}${1}${N}]"
 		fi
@@ -947,6 +976,10 @@ remove() {
 		printf '\n'
 		if [ "${p}" != [nN] ] || [ "${2}" ]; then
 			"${ADMIN[@]}" rm -Rf "${1}"
+			if [ "${?}" -ne 0 ]; then
+				say "${R}Failed to delete [${1}]${N} Exiting"
+				exit 1
+			fi
 		else
 			say "${W}Skipping deletion of${N} [${G}${1}${N}]"
 		fi
